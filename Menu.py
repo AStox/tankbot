@@ -2,6 +2,8 @@ from bge import logic
 from bge import events
 from bge import render
 
+#test
+
 class Button(object):
 		
 	def __init__(self, name, action):
