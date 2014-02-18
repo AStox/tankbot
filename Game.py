@@ -19,8 +19,12 @@ def Game():
 			obj['time'] = 0.0
 			obj['players'] = 0.0
 			obj['enemies'] = 0.0
+			logic.globalDict['level'] = 1
+			stats = { 'rocketsFired' : 0, 'rocketsIntercepted' : 0, 'bounceHits' : 0, 'level' : 0, 'score' : 0}
+			logic.globalDict['stats'] = stats
 			
 	def Update():
+		pass
 		# if all tanks are destroyed, level += 1
 		# OR
 		# if all tanks are destroyed a menu pops up with stats and asking to continue to next level or stop.
@@ -28,13 +32,11 @@ def Game():
 	def Score():
 		if obj['enemies'] < 1:
 			if obj['time'] > 45:
-				print("A")
 				scene.suspend()
 				logic.addScene('Score')
 			obj['time'] += 1
 		if obj['players'] < 1:
 			if obj['time'] > 45:	
-				print("A")
 				scene.suspend()
 				logic.addScene('Score')
 			obj['time'] += 1

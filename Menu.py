@@ -2,13 +2,7 @@ from bge import logic
 from bge import events
 from bge import render
 
-#test
-
 class Button(object):
-		
-	def __init__(self, name, action):
-		self.name = name
-		self.action = action
 		
 	def getName(self):
 		return self.name
@@ -16,16 +10,46 @@ class Button(object):
 	def mouseOver(self):
 		cont = logic.getCurrentController()
 		obj = cont.owner
-		scene = logic.getCurrentScene()
 		mouse = cont.sensors['Mouse']
 		
 		if mouse.positive:
 			if obj['var'] == 0:
-				obj.playAction(self.action,1.0,5.0,1,1,1.0,0,0.0,1,1.0)
+				obj.playAction('PlayAction',1.0,5.0,1,1,1.0,0,0.0,1,1.0)
 				obj['var'] += 1
 		else:
-			obj.playAction(self.action,5.0,10.0,1,1,1.0,0,0.0,1,1.0)
+			obj.playAction('PlayAction',5.0,1.0,1,1,1.0,0,0.0,1,1.0)
 			obj['var'] -= 1
+			
+	def Play(self):
+		cont = logic.getCurrentController()
+		scene = logic.getCurrentScene()
+		mouse = cont.sensors['Mouse']
+		mouseEvents = logic.mouse.events
+		click = mouseEvents[events.LEFTMOUSE]		
+		if click:
+			logic.addScene('Level1',True)
+			scene.end()
+			
+	def Quit(self):
+		cont = logic.getCurrentController()
+		scene = logic.getCurrentScene()
+		mouse = cont.sensors['Mouse']
+		mouseEvents = logic.mouse.events
+		click = mouseEvents[events.LEFTMOUSE]
+		if click:
+			logic.endGame()
+			
+	def Next(self):
+		cont = logic.getCurrentController()
+		scene = logic.getCurrentScene()
+		mouse = cont.sensors['Mouse']
+		mouseEvents = logic.mouse.events
+		click = mouseEvents[events.LEFTMOUSE]
+		nextLevel = logic.globalDict['level'] + 1
+		if click:
+			logic.addScene('Level%s' % nextLevel, True)
+		
+	
 			
 def Camera():
 	
@@ -36,6 +60,7 @@ def Camera():
 	def Init():
 		if not 'init' in obj:
 			obj['init'] = 1
+			obj['level'] = 1
 	
 	def Update():
 		logic.mouse.visible = True
@@ -45,73 +70,57 @@ def Camera():
 
 def Play():
 	
-	cont = logic.getCurrentController()
-	obj = cont.owner
-	scene = logic.getCurrentScene()
-	mouse = cont.sensors['Mouse']
-	mouseEvents = logic.mouse.events
-	click = mouseEvents[events.LEFTMOUSE]
-	
 	def Init():
+		cont = logic.getCurrentController()
+		obj = cont.owner
 		if not 'init' in obj:
 			obj['init'] = 1
 			obj['var'] = 0
 	
 	def Update():
 		
-		play = Button('play','PlayAction')
+		play = Button()
 		play.mouseOver()
-		
-		"""
-		if mouse.positive:
-			if obj['var'] == 0:
-				obj.playAction('PlayAction',1.0,5.0,1,1,1.0,0,0.0,1,1.0)
-				obj['var'] += 1
-		else:
-			obj.playAction('PlayAction',5.0,10.0,1,1,1.0,0,0.0,1,1.0)
-			obj['var'] -= 1
-		"""
-		
-	def Click():
-		if click:
-			logic.addScene('Level1',True)
-			scene.end()
+		play.Play()
 	
 	Init()
 	Update()
-	Click()
-	
 	
 def Quit():
 	
-	cont = logic.getCurrentController()
-	obj = cont.owner
-	scene = logic.getCurrentScene()
-	mouse = cont.sensors['Mouse']
-	mouseEvents = logic.mouse.events
-	click = mouseEvents[events.LEFTMOUSE]
-	
 	def Init():
+		cont = logic.getCurrentController()
+		obj = cont.owner
 		if not 'init' in obj:
 			obj['init'] = 1
 			obj['var'] = 0
 	
 	def Update():
-		if mouse.positive:
-			if obj['var'] == 0:
-				obj.playAction('QuitAction',1.0,5.0,1,1,1.0,0,0.0,1,1.0)
-				obj['var'] += 1
-		else:
-			obj.playAction('QuitAction',5.0,10.0,1,1,1.0,0,0.0,1,1.0)
-			obj['var'] -= 1
+		
+		quit = Button()
+		quit.mouseOver()
+		quit.Quit()
 	
-	def Click():
-		if click:
-			logic.endGame()
+	Init()
+	Update()	
+
+def Next():
+	
+	def Init():
+		cont = logic.getCurrentController()
+		obj = cont.owner
+		if not 'init' in obj:
+			obj['init'] = 1
+			obj['var'] = 0
+	
+	def Update():
+		
+		next = Button()
+		next.mouseOver()
+		next.Next()
 	
 	Init()
 	Update()
-	Click()
 	
 def Template():
 	
