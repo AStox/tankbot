@@ -27,8 +27,7 @@ class Button(object):
 		mouseEvents = logic.mouse.events
 		click = mouseEvents[events.LEFTMOUSE]		
 		if click:
-			logic.addScene('Level1',True)
-			scene.end()
+			logic.addScene('Level1')
 			
 	def Quit(self):
 		cont = logic.getCurrentController()
@@ -42,28 +41,61 @@ class Button(object):
 	def Next(self):
 		cont = logic.getCurrentController()
 		scene = logic.getCurrentScene()
+		scenes = logic.getSceneList()
 		mouse = cont.sensors['Mouse']
 		mouseEvents = logic.mouse.events
 		click = mouseEvents[events.LEFTMOUSE]
-		nextLevel = logic.globalDict['level'] + 1
-		if click:
-			logic.addScene('Level%s' % nextLevel, True)
+		dict = logic.globalDict
+		nextLevel = dict['level'] + 1
 		
+		if click:
+			for i in scenes:
+				if 'Level%s' % (nextLevel - 1) in i.name:
+					i.replace('Level%s' % nextLevel)
+			scene.end()
 	
-			
+	def Gameover(self):
+		cont = logic.getCurrentController()
+		obj = cont.owner
+		scene = logic.getCurrentScene()
+		mouse = cont.sensors['Mouse']
+		mouseEvents = logic.mouse.events
+		click = mouseEvents[events.LEFTMOUSE]
+		if obj['time'] > 3:
+			if click:
+				logic.restartGame()
+		obj['time'] += 1
+
+def CameraMain():
+	
+	cont = logic.getCurrentController()
+	obj = cont.owner
+	scene = logic.getCurrentScene()
+	dict = logic.globalDict
+	
+	def Init():
+		if not 'init' in obj:
+			obj['init'] = 1
+	
+	def Update():
+		logic.mouse.visible = True
+	
+	Init()
+	Update()
+		
 def Camera():
 	
 	cont = logic.getCurrentController()
 	obj = cont.owner
 	scene = logic.getCurrentScene()
+	dict = logic.globalDict
 	
 	def Init():
 		if not 'init' in obj:
 			obj['init'] = 1
-			obj['level'] = 1
-	
+			logic.mouse.visible = True
 	def Update():
-		logic.mouse.visible = True
+		pass
 	
 	Init()
 	Update()
@@ -118,6 +150,25 @@ def Next():
 		next = Button()
 		next.mouseOver()
 		next.Next()
+	
+	Init()
+	Update()
+	
+def Gameover():
+	
+	def Init():
+		cont = logic.getCurrentController()
+		obj = cont.owner
+		if not 'init' in obj:
+			obj['init'] = 1
+			obj['var'] = 0
+			obj['time'] = 0
+	
+	def Update():
+		
+		gameover = Button()
+		gameover.mouseOver()
+		gameover.Gameover()
 	
 	Init()
 	Update()
