@@ -260,6 +260,8 @@ def Rocket():
 	scene = logic.getCurrentScene()
 	motion = cont.actuators['Motion']
 	collision = cont.sensors['Collision']
+	dict = logic.globalDict
+	level = dict['level']
 	
 	def Init():
 		if not 'init' in obj:
@@ -279,8 +281,7 @@ def Rocket():
 		obj.localPosition.z = 1.0
 		
 		scene.addObject('EffectRocket1',obj)
-		scene.addObject('EffectRocket2',obj)
-		
+		scene.addObject('EffectRocket2',obj)		
 		motion.useLocalDLoc = True
 		motion.useLocalDRot = True
 		motion.dLoc = [0.0, obj['speed'] ,0.0]
@@ -356,7 +357,7 @@ def Rocket():
 		hitPos = [ray[1][0], ray[1][1], ray[1][2]]
 		#render.drawLine(obj.position, hitPos, [0.0, 1.0, 0.0])
 		if obj.rayCast(toPos, obj, 100, 'enemy', 1, 0)[0] != None:
-			logic.sendMessage('hit', 'None', 'Enemy')
+			logic.sendMessage('hit', 'None', 'Enemy%s' % level)
 	
 	Init()
 	Update()
