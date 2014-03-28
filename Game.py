@@ -7,10 +7,10 @@ def Game():
 	obj = cont.owner
 	scene = logic.getCurrentScene()
 	message = cont.sensors['Message']
+	dict = logic.globalDict
 	
 	def Init():
 		if not 'init' in obj:
-			scene.suspend()
 			obj['init'] = 1
 			obj['newLevel'] = 0
 			obj['target'] = scene.objects['Tank']
@@ -19,26 +19,24 @@ def Game():
 			obj['time'] = 0.0
 			obj['players'] = 0.0
 			obj['enemies'] = 0.0
-			logic.globalDict['level'] = 1
-			stats = { 'rocketsFired' : 0, 'rocketsIntercepted' : 0, 'bounceHits' : 0, 'level' : 0, 'score' : 0}
-			logic.globalDict['stats'] = stats
+			#dict['level'] = 1
+			scene.suspend()
 			
 	def Update():
 		pass
-		# if all tanks are destroyed, level += 1
-		# OR
-		# if all tanks are destroyed a menu pops up with stats and asking to continue to next level or stop.
-	
-	def Score():
+		
+	def Next():
 		if obj['enemies'] < 1:
 			if obj['time'] > 45:
 				scene.suspend()
-				logic.addScene('Score')
+				logic.addScene('Next')
 			obj['time'] += 1
+			
+	def Gameover():	
 		if obj['players'] < 1:
 			if obj['time'] > 45:	
 				scene.suspend()
-				logic.addScene('Score')
+				logic.addScene('Gameover')
 			obj['time'] += 1
 	
 	def Camera():
@@ -60,9 +58,10 @@ def Game():
 		pass
 	else:
 		Camera()
+	Next()
+	Gameover()
 	if obj['newLevel'] == 0:
 		Countdown()
-	Score()
 	
 def CountdownAction():
 	
@@ -71,10 +70,8 @@ def CountdownAction():
 	scene = logic.getCurrentScene()
 	action = cont.actuators['Action']
 	scenes = logic.getSceneList()
-
-	for i in scenes:
-		if i.name == "Level1":
-			level1 = i
+	dict = logic.globalDict
+	level = dict['level']
 	
 	def Init():
 		if not 'init' in obj:
@@ -84,22 +81,65 @@ def CountdownAction():
 	def Update():
 		cont.activate(action)
 		if obj['time'] > 130.0:
-			level1.resume()
+			for i in scenes:
+				if 'Level%s' % level in i.name:
+					i.resume()
+			for i in scenes:
+				if 'Menu' in i.name:
+					i.end()
 			scene.end()
 		obj['time'] += 1.0
 			
 	Init()
 	Update()
-	
-def Score():
+
+def Level1():
 	
 	cont = logic.getCurrentController()
 	obj = cont.owner
 	scene = logic.getCurrentScene()
+	dict = logic.globalDict
 	
 	def Init():
 		if not 'init' in obj:
 			obj['init'] = 1
+			dict['level'] = 1
+	
+	def Update():
+		pass
+	
+	Init()
+	Update()
+	
+def Level2():
+	
+	cont = logic.getCurrentController()
+	obj = cont.owner
+	scene = logic.getCurrentScene()
+	dict = logic.globalDict
+	
+	def Init():
+		if not 'init' in obj:
+			obj['init'] = 1
+			dict['level'] = 2
+	
+	def Update():
+		pass
+	
+	Init()
+	Update()
+	
+def Level3():
+	
+	cont = logic.getCurrentController()
+	obj = cont.owner
+	scene = logic.getCurrentScene()
+	dict = logic.globalDict
+	
+	def Init():
+		if not 'init' in obj:
+			obj['init'] = 1
+			dict['level'] = 3
 	
 	def Update():
 		pass
