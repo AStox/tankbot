@@ -49,10 +49,11 @@ def Enemy():
 	cont = logic.getCurrentController()
 	obj = cont.owner
 	scene = logic.getCurrentScene()
-	
+	dict = logic.globalDict
+	level = dict['level']
 	message = cont.sensors['Message']
 	steering = cont.actuators['Steering']
-	navmesh = scene.objects['Navmesh']
+	navmesh = scene.objects['Navmesh%s' % level]
 	
 	def Init():
 		if not 'init' in obj:
@@ -95,7 +96,7 @@ def Enemy():
 	def Health():
 		if obj['hp'] < 1:
 			obj.endObject()
-			scene.objects['EnemyGun'].endObject()
+			scene.objects['EnemyGun%s' % level].endObject()
 			scene.objects['CamMain']['enemies'] -= 1
 	
 	Init()
@@ -111,13 +112,15 @@ def Gun():
 	cont = logic.getCurrentController()
 	obj = cont.owner
 	scene = logic.getCurrentScene()
+	dict = logic.globalDict
+	level = dict['level']
 	
 	def Init():
 		if not 'init' in obj:
 			obj['init'] = 1
 			obj['dir'] = 0.0
 			obj['target'] = scene.objects['Tank']
-			obj['parent'] = scene.objects['Enemy']
+			obj['parent'] = scene.objects['Enemy%s' % level]
 	
 	def Update():
 		
@@ -161,7 +164,9 @@ def RocketInit():
 	cont = logic.getCurrentController()
 	obj = cont.owner
 	scene = logic.getCurrentScene()
-	aim = scene.objects['EnemyAim']
+	dict = logic.globalDict
+	level = dict['level']	
+	aim = scene.objects['EnemyAim%s' % level]
 	
 	
 	def Init():
