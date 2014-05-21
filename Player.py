@@ -5,6 +5,12 @@ import math
 import mathutils
 import time
 
+def Dist(vector1,vector2):
+	x = vector1[0] - vector2[0]
+	y = vector1[1] - vector2[1]
+	z = vector1[2] - vector2[2]
+	return math.sqrt(math.sqrt(x**2+y**2)+z**2)
+
 def Scalar(vector1, vector2):
 	x = vector1[0] * vector2[0]
 	y = vector1[1] * vector2[1]
@@ -111,7 +117,6 @@ def Player():
 			
 	#Update function. Runs every logic frame when TRUE level triggering is active
 	def Update():
-		
 		#left/right motion
 		if kbleft > 0:
 			obj['mx'] += -obj['accel']
@@ -145,8 +150,10 @@ def Player():
 		ori.z = obj['dir']
 		obj.orientation = ori
 	
-	def Health():
+	def Death():
 		if obj['hp'] < 1:
+			scene.addObject('Explosion',obj)
+			logic.sendMessage('explosion', 'None')
 			obj.endObject()
 			scene.objects['TankGun'].endObject()
 			scene.objects['CamMain']['players'] -= 1
@@ -154,7 +161,7 @@ def Player():
 	Init()
 	Update()
 	Animate()
-	Health()
+	Death()
 
 def Gun():
 	
@@ -169,16 +176,39 @@ def Gun():
 	def Init():
 		if not 'init' in obj:
 			obj['init'] = 1
-			obj['scale'] = 0.001
+			obj['scale'] = 1
 			obj['time'] = 0
+			scene.addObject('LaserPoint',obj)
 			
 	def Update():
 		
 		obj.worldPosition = obj['parent'].worldPosition
 		
-		obj['time'] += 1
+		#obj['time'] += 1
 		
-		def mousePos():
+		def MousePos():
+			x = int(render.getWindowWidth() / 2 - (logic.mouse.position[0] * render.getWindowWidth())) * obj['scale']
+			y = int(render.getWindowHeight() / 2 - (logic.mouse.position[1] * render.getWindowHeight())) * obj['scale']
+			return mathutils.Vector((-x, y, 0.6520))
+		
+		toVect = MousePos() - obj.worldPosition
+		#print (logic.mouse.position)
+		obj.alignAxisToVect(toVect, 1, 1)
+		obj.alignAxisToVect([0.0, 0.0, 1.0], 2, 1)
+		
+		"""if MousePos()[0] < (-int(render.getWindowWidth()/2 - 100)):
+			render.setMousePosition(110, int(render.getWindowHeight()/2) - int(MousePos()[1]))
+		elif MousePos()[0] > (int(render.getWindowWidth()/2 - 100)):
+			render.setMousePosition(render.getWindowWidth() - 110, int(render.getWindowHeight()/2) - int(MousePos()[1]))
+		if MousePos()[1] < (-int(render.getWindowHeight()/2 - 100)):
+			render.setMousePosition(int(render.getWindowWidth()/2) + int(MousePos()[0]), int(render.getWindowHeight() - 110))
+		elif MousePos()[1] > (int(render.getWindowHeight()/2 - 100)):
+			render.setMousePosition(int(render.getWindowWidth()/2) + int(MousePos()[0]), 110)"""
+		#logic.mouse.visible = True
+		
+		"""#####################OLD AIMING SYSTEM BELOW################"""
+		
+		"""def mousePos():
 			x = int(render.getWindowWidth() / 2 - (logic.mouse.position[0] * render.getWindowWidth())) * obj['scale']
 			return x
 		
@@ -187,13 +217,14 @@ def Gun():
 			motion.useLocalDRot = False
 			motion.dRot = (0.0, 0.0, pos)
 			cont.activate(motion)
-
-		render.setMousePosition(int(render.getWindowWidth() / 2), int(render.getWindowHeight() / 2))
+"""
+		#render.setMousePosition(int(render.getWindowWidth() / 2), int(render.getWindowHeight() / 2))
 		
 	def Laser():
-		ray = obj.rayCast(aim, rInit, 100, '', 1, 0)[1]
-		hitPos = [ray[0],ray[1], ray[2]]
+		ray = obj.rayCast(aim, rInit, 500, '', 1, 0)[1]
+		hitPos = [ray[0], ray[1], ray[2]]
 		render.drawLine(rInit.worldPosition, hitPos, [1.0, 0.0, 0.0])
+		scene.objects['LaserPoint'].worldPosition = (mathutils.Vector((hitPos[0], hitPos[1], hitPos[2])) + (obj.rayCast(aim, rInit, 500, '', 1, 0)[2]*.25))
 	
 	Init()
 	Update()
@@ -237,7 +268,7 @@ def RocketInit():
 		if not 'init' in obj:
 			obj['init'] = 1
 			obj['atk'] = 10
-			obj['shottimer'] = 0.0
+			obj['shottimer'] = 50.0
 			obj['dir'] = 0.0
 			
 	def Update():
@@ -246,7 +277,7 @@ def RocketInit():
 		if msshoot:
 			if obj['shottimer'] >= 60.0:
 				obj['shottimer'] = 0.0
-				rocket = scene.addObject('Rocket',obj)
+				rocket = scene.addObject('Rocket', obj)
 				rocket['speed'] = 0.25
 				rocket['dir'] = obj['dir']
 		
@@ -262,6 +293,7 @@ def Rocket():
 	collision = cont.sensors['Collision']
 	dict = logic.globalDict
 	level = dict['level']
+	rocket_collision = cont.sensors['Collision2']
 	
 	def Init():
 		if not 'init' in obj:
@@ -277,7 +309,7 @@ def Rocket():
 			obj['time'] = 0.0
 	
 	def Update():
-		
+		obj['dir'] = obj.worldLinearVelocity
 		obj.localPosition.z = 1.0
 		
 		scene.addObject('EffectRocket1',obj)
@@ -285,11 +317,13 @@ def Rocket():
 		motion.useLocalDLoc = True
 		motion.useLocalDRot = True
 		motion.dLoc = [0.0, obj['speed'] ,0.0]
-		obj.applyForce([0.0, 0.0, 9.82], 0)
+		#obj.applyForce([0.0, 0.0, 9.82], 0)
 		cont.activate(motion)
-	
+		#print(obj.orientation)
+		
 	def BounceAngle():
 		if Bounce(obj['speed'], obj['front'], obj['side'], obj['side'], 'wall') != mathutils.Vector((0.0, 0.0, 0.0)):
+			cont.activate(cont.actuators['Bounce'])
 			if int(Bounce(obj['speed'], obj['front'], obj['side'], obj['side'], 'wall')[1]) == -1: #collision surface is on the X axis
 				colAngle = math.atan2(Bounce(obj['speed'], obj['front'], obj['side'], obj['side'], 'wall')[0], Bounce(obj['speed'], obj['front'], obj['side'], obj['side'], 'wall')[1])
 				rocketAngle = math.atan2(obj.orientation[1][0], obj.orientation[1][1])
@@ -325,71 +359,78 @@ def Rocket():
 				ori.z = newAngle
 				obj.orientation = ori
 				obj['bounces'] += 1
-	def Death():	
-		obj['time'] += 1.0
-		
+				
+	def Death():
 		if obj['bounces'] > obj['maxBounces']:
 			obj.endObject()
-			eff1 = scene.addObject('Effect1',obj)
-			eff2 = scene.addObject('Effect2',obj)
+			explosion = scene.addObject('Explosion',obj)
+			logic.sendMessage('rocket_explosion', 'None')
 		
-		if obj['time'] > 2:
+		elif obj['time'] > 2:
+			if rocket_collision.positive and obj['time'] < 30:
+				dict['levelScore'] += 10
+				dict['rocket_kills'] += 1
+				scene.addObject('Plus_10',obj,40)
+				scene.objects['Plus_10'].alignAxisToVect([1.0,0,0],0,1.0)
 			if collision.positive:
 				enemy = collision.hitObject
-				if not 'hp' in enemy:
-					pass
-				else:
+				if 'enemy' in enemy:
+					logic.sendMessage('hit', 'None', str(enemy))
+				if 'hp' in enemy:
 					enemy['hp'] -= 10
 				obj.endObject()
-				eff1 = scene.addObject('Effect1',obj)
-				eff2 = scene.addObject('Effect2',obj)
+				explosion = scene.addObject('Explosion',obj)
+				explosion['dir'] = obj['dir']
 		
 		if obj['time'] > 600:
 			obj.endObject()
+		
+		obj['time'] += 1.0
 			
 	def Message():
 		ori = obj.orientation[1].copy()
 		ori.x *= -1
 		pos = obj.position
 		toPos = pos + ori
+		posL = obj.worldPosition + Scalar(obj.orientation[0], mathutils.Vector((-1,1,1)))*.5
+		posR = obj.worldPosition - Scalar(obj.orientation[0], mathutils.Vector((-1,1,1)))*.5
 		
 		ray = obj.rayCast(toPos, obj, 100, '', 1, 0)
-		hitPos = [ray[1][0], ray[1][1], ray[1][2]]
-		#render.drawLine(obj.position, hitPos, [0.0, 1.0, 0.0])
-		if obj.rayCast(toPos, obj, 100, 'enemy', 1, 0)[0] != None:
-			logic.sendMessage('hit', 'None', 'Enemy%s' % level)
+		rayL = obj.rayCast(posL + Scalar(obj.orientation[1], mathutils.Vector((-1,1,1))), posL, 100, '', 1, 0)
+		rayR = obj.rayCast(posR + Scalar(obj.orientation[1], mathutils.Vector((-1,1,1))), posR, 100, '', 1, 0)
+		if ray[1] != None:
+			hitPos = [ray[1][0], ray[1][1], ray[1][2]]
+			hitPosL = [rayL[1][0], rayL[1][1], rayL[1][2]]
+			hitPosR = [rayR[1][0], rayR[1][1], rayR[1][2]]
+			#render.drawLine(obj.position, hitPos, [0.0, 1.0, 0.0])
+			#render.drawLine(posL, hitPosL, [0.0, 1.0, 0.0])
+			#render.drawLine(posR, hitPosR, [0.0, 1.0, 0.0])
+		ray = obj.rayCast(toPos, obj, 100, 'enemy', 1, 0)
+		rayL = obj.rayCast(posL + Scalar(obj.orientation[1], mathutils.Vector((-1,1,1))), posL, 100, 'enemy', 1, 0)
+		rayR = obj.rayCast(posR + Scalar(obj.orientation[1], mathutils.Vector((-1,1,1))), posR, 100, 'enemy', 1, 0)
 	
+		if ray != None or rayL != None or rayR != None:
+			if ray[0] != None:
+				if Dist(ray[1], scene.objects['EvadeL'].worldPosition) > Dist(ray[1], scene.objects['EvadeR'].worldPosition):
+					logic.sendMessage('hit_L', 'None', str(ray[0]))
+				else:
+					logic.sendMessage('hit_R', 'None', str(ray[0]))
+			elif rayL[0] != None:
+				if Dist(rayL[1], scene.objects['EvadeL'].worldPosition) > Dist(rayL[1], scene.objects['EvadeR'].worldPosition):
+					logic.sendMessage('hit_L', 'None', str(rayL[0]))
+				else:
+					logic.sendMessage('hit_R', 'None', str(rayL[0]))
+			elif rayR[0] != None:
+				if Dist(rayR[1], scene.objects['EvadeL'].worldPosition) > Dist(rayR[1], scene.objects['EvadeR'].worldPosition):
+					logic.sendMessage('hit_L', 'None', str(rayR[0]))
+				else:
+					logic.sendMessage('hit_R', 'None', str(rayR[0]))
+				
 	Init()
 	Update()
 	Message()
 	BounceAngle()
-	Death()
-
-	
-def Explosion():
-	
-	cont = logic.getCurrentController()
-	obj = cont.owner
-	scene = logic.getCurrentScene()
-	action = cont.actuators['Action']
-	
-	def Init():
-		if not 'init' in obj:
-			obj['init'] = 1
-			obj['time'] = 0.0
-			if not 'type' in obj:
-				obj['type'] = None
-	
-	def Update():
-			
-		if obj['time'] > 37.0:
-			obj.endObject()
-		obj['time'] += 1.0
-		
-		cont.activate(action)
-	
-	Init()
-	Update()	
+	Death()	
 	
 def Template():
 	
