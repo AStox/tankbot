@@ -319,6 +319,8 @@ def Grid():
 	def Update():
 		if collision.positive:
 				enemy = collision.hitObject
+				if 'hp' in enemy:
+					enemy['hp'] -= 1000
 				logic.sendMessage('hit', 'None', str(enemy))
 	
 	Init()
