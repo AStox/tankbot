@@ -310,7 +310,7 @@ def Rocket():
 	
 	def Update():
 		obj['dir'] = obj.worldLinearVelocity
-		obj.localPosition.z = 1.0
+		obj.worldPosition = [obj.worldPosition[0], obj.worldPosition[1], 1.0]
 		
 		scene.addObject('EffectRocket1',obj)
 		scene.addObject('EffectRocket2',obj)		
@@ -366,21 +366,20 @@ def Rocket():
 			explosion = scene.addObject('Explosion',obj)
 			logic.sendMessage('rocket_explosion', 'None')
 		
-		elif obj['time'] > 2:
-			if rocket_collision.positive and obj['time'] < 30:
-				dict['levelScore'] += 10
-				dict['rocket_kills'] += 1
-				scene.addObject('Plus_10',obj,40)
-				scene.objects['Plus_10'].alignAxisToVect([1.0,0,0],0,1.0)
-			if collision.positive:
-				enemy = collision.hitObject
-				if 'enemy' in enemy:
-					logic.sendMessage('hit', 'None', str(enemy))
-				if 'hp' in enemy:
-					enemy['hp'] -= 10
-				obj.endObject()
-				explosion = scene.addObject('Explosion',obj)
-				explosion['dir'] = obj['dir']
+		if rocket_collision.positive and obj['time'] < 30:
+			dict['levelScore'] += 10
+			dict['rocket_kills'] += 1
+			scene.addObject('Plus_10',obj,40)
+			scene.objects['Plus_10'].alignAxisToVect([1.0,0,0],0,1.0)
+		if collision.positive and obj['time'] > 2:
+			enemy = collision.hitObject
+			if 'enemy' in enemy:
+				logic.sendMessage('hit', 'None', str(enemy))
+			if 'hp' in enemy:
+				enemy['hp'] -= 10
+			obj.endObject()
+			explosion = scene.addObject('Explosion',obj)
+			explosion['dir'] = obj['dir']
 		
 		if obj['time'] > 600:
 			obj.endObject()

@@ -72,7 +72,7 @@ def Game():
 			
 	def Gameover():	
 		if obj['players'] < 1:
-			if obj['time'] > 45:	
+			if obj['time'] > 45:	#delay between when the last tank is killed and the 'gameover' menu appears
 				scene.suspend()
 				logic.addScene('Gameover')
 			obj['time'] += 1
@@ -96,7 +96,8 @@ def Game():
 		pass
 	else:
 		Camera()
-	Next()
+	if not 'Gameover' in scenes:
+		Next()
 	if not 'Next' in scenes:
 		Gameover()
 	if obj['newLevel'] == 0:
