@@ -1,8 +1,32 @@
+'''
+Copyright 2014 Adam Stockermans
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+'''
+
 from bge import logic
 from bge import events
 from bge import render
 import math
 import mathutils
+import copy
+import random
+
+def Dist(vector1,vector2):
+	x = vector1[0] - vector2[0]
+	y = vector1[1] - vector2[1]
+	z = vector1[2] - vector2[2]
+	return math.sqrt(math.sqrt(x**2+y**2)+z**2)
 
 def Scalar(vector1, vector2):
 	x = vector1[0] * vector2[0]
@@ -18,6 +42,12 @@ def AbsVec(vector):
 	
 	return mathutils.Vector((x, y, z))
 
+def VectorMagnitude(vector):
+	return math.sqrt(vector[0]**2 + vector[1]**2 + vector[2]**2)
+	
+def Angle(vector1, vector2):
+	return (180/math.pi)	* math.acos((Scalar(vector1, vector2)[0] + Scalar(vector1, vector2)[1] + Scalar(vector1, vector2)[2])/(VectorMagnitude(vector1)*VectorMagnitude(vector2)))
+	
 def Max(value, max, min):
 	if value > max:
 		return max
@@ -55,17 +85,17 @@ def AxisCheck(my, front = 1.0, left = 1.0, right = 1.0, prop = 'wall'):
 
 class EnemyTemp(object):
 	
-	def __init__(self, hp, shot_cd):
+	def __init__(self, hp, shot_cd, type):
 		cont = logic.getCurrentController()
 		obj = cont.owner
 		scene = logic.getCurrentScene()
+		self.hp = hp
+		self.shot_cd = shot_cd
+		self.type = type
 		dict = logic.globalDict
 		level = dict['level']
 		enemyID = str(obj)[len(str(obj))-4:len(str(obj))]
-		obj['parent'] = scene.objects['Enemy%s%s' % (level, enemyID)]
-		aim = scene.objects['EnemyAim%s%s' % (level, enemyID)]
-		self.hp = hp
-		self.shot_cd = shot_cd
+		obj['parent'] = scene.objects['Enemy%s%s' % (level, enemyID)]	
 		if 'Tank' in scene.objects:
 			obj['target'] = scene.objects['Tank']
 		obj['atk'] = 10
@@ -88,42 +118,67 @@ class EnemyTemp(object):
 				obj['evadeTimer'] = 50
 				scene.addObject('EvadeR', obj)
 				scene.addObject('EvadeL', obj)
+				obj['trailTime'] = 0
+				obj['trail'] = False
+				if self.type == 'kamikaze':
+					obj['following'] = False
 		Init()
+		
+		
+		#if 'Navmesh%s.000' % level in scene.objects:
+		#	steering.navmesh = scene.objects['Navmesh%s.000' % level]
+			
 		evadeR = scene.objects['EvadeR']
 		evadeL = scene.objects['EvadeL']
 		obj['evadeTimer'] += 1
-		for i in range (0,361,30):
-			i *= (math.pi/180)	
-			if messageL.positive and obj['evadeTimer']:
-				if 'Rocket' in scene.objects:
-					evadeR.worldPosition = obj.worldPosition + Scalar(scene.objects['Rocket'].orientation[0], mathutils.Vector((-1,1,1)))*3
-					evadeL.worldPosition = obj.worldPosition - Scalar(scene.objects['Rocket'].orientation[0], mathutils.Vector((-1,1,1)))*3
-					steering.behavior = 2
-					steering.distance = 1000
-					cont.activate(steering)
-					steering.target = scene.objects['EvadeR']
-					obj['evadeTimer'] = 0
-					#render.drawLine(obj.worldPosition, scene.objects['EvadeR'].worldPosition,(1.0,1.0,1.0))
-					#print("L")
-			elif messageR.positive and obj['evadeTimer']:
-				if 'Rocket' in scene.objects:
-					evadeR.worldPosition = obj.worldPosition + Scalar(scene.objects['Rocket'].orientation[0], mathutils.Vector((-1,1,1)))*3
-					evadeL.worldPosition = obj.worldPosition - Scalar(scene.objects['Rocket'].orientation[0], mathutils.Vector((-1,1,1)))*3
-					steering.behavior = 2
-					steering.distance = 1000
-					cont.activate(steering)
-					steering.target = scene.objects['EvadeL']
-					obj['evadeTimer'] = 0
-					#render.drawLine(obj.worldPosition, scene.objects['EvadeL'].worldPosition,(1.0,1.0,1.0))
-					#print("R")
-			elif obj.rayCast('Tank', obj, 0, 'player', 0, 0)[0] == None and obj['evadeTimer'] >= 50:
+		
+		if self.type == 'kamikaze' and obj.rayCast('Tank', obj, 0, 'player', 0, 0)[0] != None:
+			obj['following'] = True
+		
+		if obj['trail'] == True and obj['trailTime'] > 2:
+			scene.addObject('Trail', obj, 1000)
+			obj['trailTime'] = 0
+		
+		if self.type != 'artillery':
+			obj['trail'] = True
+			obj['trailTime'] += 1
+			for i in range (0,361,30):
+				i *= (math.pi/180)	
+				#Evading to the left
+				if self.type == 'regular' and messageL.positive and obj['evadeTimer']:
+					if 'Rocket' in scene.objects:
+						evadeR.worldPosition = obj.worldPosition + Scalar(scene.objects['Rocket'].orientation[0], mathutils.Vector((-1,1,1)))*3
+						evadeL.worldPosition = obj.worldPosition - Scalar(scene.objects['Rocket'].orientation[0], mathutils.Vector((-1,1,1)))*3
+						steering.behavior = 2
+						steering.distance = 1000
+						cont.activate(steering)
+						steering.target = scene.objects['EvadeR']
+						obj['evadeTimer'] = 0
+						#print(scene.objects['Rocket'].orientation[0])
+						#render.drawLine(obj.worldPosition, scene.objects['EvadeR'].worldPosition,(1.0,1.0,1.0))
+						#print("L")
+				#Evading to the right
+				elif self.type == 'regular' and messageR.positive and obj['evadeTimer']:
+					if 'Rocket' in scene.objects:
+						evadeR.worldPosition = obj.worldPosition + Scalar(scene.objects['Rocket'].orientation[0], mathutils.Vector((-1,1,1)))*3
+						evadeL.worldPosition = obj.worldPosition - Scalar(scene.objects['Rocket'].orientation[0], mathutils.Vector((-1,1,1)))*3
+						steering.behavior = 2
+						steering.distance = 1000
+						cont.activate(steering)
+						steering.target = scene.objects['EvadeL']
+						obj['evadeTimer'] = 0
+						#render.drawLine(obj.worldPosition, scene.objects['EvadeL'].worldPosition,(1.0,1.0,1.0))
+						#print("R")
+				#Following Player
+				elif self.type == 'regular' and obj.rayCast('Tank', obj, 0, 'player', 0, 0)[0] == None and obj['evadeTimer'] >= 50:
 					steering.behavior = 3
 					steering.distance = 1
 					steering.target = scene.objects['Tank']
 					cont.activate(steering)
 					#render.drawLine(obj.worldPosition, steering.target.worldPosition, [1.0, 1.0, 1.0])
 					#print("Tank")
-			elif obj.rayCast(obj.worldPosition + mathutils.Vector((2.5*math.sin(i),2.5*math.cos(i),0)), obj, 2.5, "", 0, 0, 0)[0] != None and obj['evadeTimer'] >= 50:
+				#Keeping distance from obstacles
+				elif obj.rayCast(obj.worldPosition + mathutils.Vector((2.5*math.sin(i),2.5*math.cos(i),0)), obj, 2.5, "", 0, 0, 0)[0] != None and obj['evadeTimer'] >= 50:
 					evadeObject = scene.addObject('Evade', obj, 50)
 					evadeObject.worldPosition = obj.rayCast(obj.worldPosition + mathutils.Vector((2.5*math.sin(i),2.5*math.cos(i),0)), obj, 2.5, "", 0, 0, 0)[1]
 					steering.behavior = 2
@@ -132,9 +187,17 @@ class EnemyTemp(object):
 					steering.target = scene.objects['Evade']
 					#render.drawLine(obj.worldPosition, obj.worldPosition + mathutils.Vector((5*math.sin(i),5*math.cos(i),0)), [1.0, 1.0, 1.0])
 					#print("Wall")
-			else:
-				cont.deactivate(steering)
-				
+				#kamikaze following player
+				elif self.type == 'kamikaze' and obj['following'] == True:
+					steering.behavior = 3
+					steering.distance = 0
+					steering.target = scene.objects['Tank']
+					cont.activate(steering)
+					#print("kamikaze")
+				else:
+					obj['trail'] = False
+					cont.deactivate(steering)
+					
 	def Health(self):
 		cont = logic.getCurrentController()
 		obj = cont.owner
@@ -143,6 +206,15 @@ class EnemyTemp(object):
 		scene = logic.getCurrentScene()
 		enemyID = str(obj)[len(str(obj))-4:len(str(obj))]
 		hit = cont.sensors['Message2']
+		if self.type == 'kamikaze':
+			col = cont.sensors['Collision']
+			if col.positive:
+				self.hp -= 10
+				enemy = col.hitObject
+				if 'enemy' in enemy:
+					logic.sendMessage('hit', 'None', str(enemy))
+				if 'hp' in enemy:
+					enemy['hp'] -= 10
 		if hit.positive:
 			self.hp -= 10
 		if self.hp < 1:
@@ -151,67 +223,110 @@ class EnemyTemp(object):
 				dict['tank_kills'] += 1
 				scene.addObject('Plus_100', obj, 40)
 				scene.objects['Plus_100'].alignAxisToVect([1.0,0,0],0,1.0)
-				#print (dir(scene.objects['Plus_100']))
 			scene.addObject('Explosion',obj)
-			obj.endObject()
 			scene.objects['EnemyGun%s%s' % (level, enemyID)].endObject()
 			scene.objects['CamMain']['enemies'] -= 1
 			logic.sendMessage('explosion', 'None')
+			obj.endObject()
 			
 	def Gun(self):
 		cont = logic.getCurrentController()
 		obj = cont.owner
+		scene = logic.getCurrentScene()
 		obj.worldPosition = obj['parent'].worldPosition
-		
+		if self.type == 'miner':
+			obj.orientation = obj['parent'].orientation
+	
 	def Aim(self):
 		cont = logic.getCurrentController()
 		obj = cont.owner
-		
-		if not 'my' in obj['target']:
-			obj['target']['my'] = 0.0
-		if not 'mx' in obj['target']:
-			obj['target']['mx'] = 0.0
+		scene = logic.getCurrentScene()
+		if self.type == 'miner':
+			pass
+		else:
+			if not 'my' in obj['target']:
+				obj['target']['my'] = 0.0
+			if not 'mx' in obj['target']:
+				obj['target']['mx'] = 0.0
+				
+			ori = obj.orientation.to_euler()
+			pos = obj.worldPosition
+			corVec = mathutils.Vector((-1.0, 1.0, 1.0))
+			tarSpeedVec = AbsVec(mathutils.Vector((obj['target']['mx'], obj['target']['my'], 0)))
+			tarOri = obj['target'].orientation[1]
+			tarPos = obj['target'].worldPosition
+			time = (obj.getDistanceTo(obj['target']))/0.3
+			corPos = tarPos + (Scalar(Scalar(tarOri, corVec), tarSpeedVec) * time)
+			obj['dir'] = (-math.pi/2 + math.atan2((corPos.y - pos.y), (corPos.x - pos.x)))
+			ori.z = obj['dir']
+			obj.orientation = ori
 			
-		ori = obj.orientation.to_euler()
-		pos = obj.worldPosition
-		corVec = mathutils.Vector((-1.0, 1.0, 1.0))
-		tarSpeedVec = AbsVec(mathutils.Vector((obj['target']['mx'], obj['target']['my'], 0)))
-		tarOri = obj['target'].orientation[1]
-		tarPos = obj['target'].worldPosition
-		time = (obj.getDistanceTo(obj['target']))/0.3
-		corPos = tarPos + (Scalar(Scalar(tarOri, corVec), tarSpeedVec) * time)
-		obj['dir'] = (-math.pi/2 + math.atan2((corPos.y - pos.y), (corPos.x - pos.x)))
-		ori.z = obj['dir']
-		obj.orientation = ori
-		#render.drawLine(pos, corPos, [0.0, 1.0, 0.0])
+			if self.type == 'artillery':
+				obj['vectNum'] = 10
+				enemy = obj
+				if 'Tank' in scene.objects:
+					tarLoc= scene.objects['Tank'].worldPosition
+				endVert = (tarLoc[0] - enemy.worldPosition[0], tarLoc[1] - enemy.worldPosition[1], tarLoc[2] - enemy.worldPosition[2])
+				vertX = Scalar(endVert, mathutils.Vector((1/obj['vectNum'],1/obj['vectNum'],1/obj['vectNum'])))
+				vertZ = -1*(1**2) + 1*obj['vectNum']
+				vect = mathutils.Vector((vertX[0], vertX[1], vertZ))
+				obj.alignAxisToVect(vect, 1, 1)
 		
 	def RocketInit(self):
 		cont = logic.getCurrentController()
 		obj = cont.owner
 		scene = logic.getCurrentScene()
+		dict = logic.globalDict
+		level = dict['level']
+		enemyID = str(obj)[len(str(obj))-4:len(str(obj))]
+		parent = scene.objects['Enemy%s%s' % (level, enemyID)]
+		#obj.worldPosition = [parent.worldPosition[0] + Scalar(parent.orientation, mathutils.Vector((-1,1,1)))[0], parent.worldPosition[1] + scalar(parent.orientation, mathutils.Vector((-1,1,1)))[1], 0.5]
+		
+		if self.type == 'regular':
+			obj.worldPosition.z = 1
+		elif self.type == 'miner':
+			obj.worldPosition.z = .45
+		
 		def Init():
 			if not 'init' in obj:
 				obj['init'] = 1
-				obj['shottimer'] = self.shot_cd
+				obj['shottimer'] = 0
+				if self.type == 'artillery':
+					obj['shottimer'] = random.randint(1, self.shot_cd)
+				obj['total'] = 0
 		Init()
 		
 		obj['shottimer'] += 1.0
-		if obj.rayCast('Tank', obj, 0, 'player', 0, 0)[0] != None:
-			if obj['shottimer'] >= self.shot_cd:
+		
+		if self.type == 'regular':
+			if obj.rayCast('Tank', obj, 0, 'player', 0, 0)[0] != None:
+				if obj['shottimer'] >= self.shot_cd:
+					obj['shottimer'] = 0.0
+					rocket = scene.addObject('EnemyRocket',obj)
+					rocket['speed'] = 0.25
+					rocket['type'] = 'player'
+		
+		elif self.type == 'artillery':
+			if 'Tank' in scene.objects and obj['shottimer'] >= self.shot_cd and obj.getDistanceTo(scene.objects['Tank']) < 50:
 				obj['shottimer'] = 0.0
-				rocket = scene.addObject('EnemyRocket',obj)
+				rocket = scene.addObject('ArtilleryRocket',obj)
 				rocket['speed'] = 0.25
 				rocket['type'] = 'player'
+				rocket['id'] = enemyID
 
 def Level0():
 	cont = logic.getCurrentController()
 	obj = cont.owner
 	scene = logic.getCurrentScene()
 	dict = logic.globalDict
-	if not 'level' in dict:
-		pass
-	else:
-		enemy = EnemyTemp(10,100)
+	enemyID = str(obj)[len(str(obj))-4:len(str(obj))]
+	if not 'Evade' in scene.objects:
+		scene.addObject('Evade', obj)
+	if 'level' in dict:
+		level = dict['level']
+	
+	if 'level' in dict:
+		enemy = EnemyTemp(10, 120, 'regular')
 		if 'enemy' in obj:
 			if not 'init' in obj:
 				obj['init'] = 1
@@ -221,9 +336,7 @@ def Level0():
 			enemy.Health()	
 		elif 'gun' in obj:
 			enemy.Gun()
-			if not 'Tank' in scene.objects:
-				pass
-			else:
+			if 'Tank' in scene.objects:
 				enemy.Aim()
 		
 def Level1():
@@ -231,24 +344,24 @@ def Level1():
 	obj = cont.owner
 	scene = logic.getCurrentScene()
 	dict = logic.globalDict
-	if not 'level' in dict:
-		pass
-	else:
-		enemy = EnemyTemp(10, 120)
+	enemyID = str(obj)[len(str(obj))-4:len(str(obj))]
+	if not 'Evade' in scene.objects:
+		scene.addObject('Evade', obj)
+	if 'level' in dict:
+		level = dict['level']
+	
+	if 'level' in dict:
+		enemy = EnemyTemp(10, 120, 'regular')
 		if 'enemy' in obj:
 			if not 'init' in obj:
 				obj['init'] = 1
 				scene.objects['CamMain']['enemies'] += 1.0
-			if not 'Tank' in scene.objects:
-				pass
-			else:
+			if 'Tank' in scene.objects:
 				enemy.Pathing()
 			enemy.Health()	
 		elif 'gun' in obj:
 			enemy.Gun()
-			if not 'Tank' in scene.objects:
-				pass
-			else:
+			if 'Tank' in scene.objects:
 				enemy.Aim()
 		else:
 			enemy.RocketInit()
@@ -261,7 +374,7 @@ def Level2():
 	if not 'level' in dict:
 		pass
 	else:
-		enemy = EnemyTemp(10, 120)
+		enemy = EnemyTemp(10, 120, 'regular')
 		if 'enemy' in obj:
 			if not 'init' in obj:
 				obj['init'] = 1
@@ -290,7 +403,7 @@ def Level3():
 	enemyID = str(obj)[len(str(obj))-4:len(str(obj))]
 		
 	if 'level' in dict:
-		enemy = EnemyTemp(10, 120)
+		enemy = EnemyTemp(10, 120, 'regular')
 		if 'enemy' in obj:
 			if not 'init' in obj:
 				obj['init'] = 1
@@ -308,7 +421,136 @@ def Level3():
 				enemy.Aim()
 		else:
 			enemy.RocketInit()
+			
+def Level4():
+	cont = logic.getCurrentController()
+	obj = cont.owner
+	scene = logic.getCurrentScene()
+	dict = logic.globalDict
+	level = dict['level']
+	scene = logic.getCurrentScene()
+	enemyID = str(obj)[len(str(obj))-4:len(str(obj))]
+	'''	dict['Navmesh'] = 
+	
+	if 'Navmesh%s.000' % level in scene.objects and dict['breakable'] == False:
+			steering.navmesh = scene.objects['Navmesh%s.000' % level]
+	elif 'Navmesh%s.001' % level in scene.objects and dict['breakable'] == True:
+			steering.navmesh = scene.objects['Navmesh%s.001' % level]'''
+	
+	if 'level' in dict:
+		regular = EnemyTemp(10, 120, 'regular')
+		miner = EnemyTemp(10, 120, 'miner')
+		artillery = EnemyTemp(10,120, 'artillery')
+		if obj['type'] == 'regular':
+			if 'enemy' in obj:
+				if not 'init' in obj:
+					obj['init'] = 1
+					scene.objects['CamMain']['enemies'] += 1.0
+				if 'Tank' in scene.objects:
+					regular.Pathing()
+				regular.Health()	
+			elif 'gun' in obj:
+				regular.Gun()
+				if not 'Tank' in scene.objects:
+					pass
+				else:
+					regular.Aim()
+			else:
+				regular.RocketInit()
+		elif obj['type'] == 'miner':
+			if 'enemy' in obj:
+				if not 'init' in obj:
+					obj['init'] = 1
+					scene.objects['CamMain']['enemies'] += 1.0
+				if not 'Tank' in scene.objects:
+					pass
+				else:
+					miner.Pathing()
+				miner.Health()	
+			elif 'gun' in obj:
+				miner.Gun()
+				if not 'Tank' in scene.objects:
+					pass
+				else:
+					miner.Aim()
+			else:
+				miner.RocketInit()
+		elif obj['type'] == 'artillery':
+			if 'enemy' in obj:
+				if not 'init' in obj:
+					obj['init'] = 1
+					scene.objects['CamMain']['enemies'] += 1.0
+				if 'Tank' in scene.objects:
+					artillery.Pathing()
+				artillery.Health()	
+			elif 'gun' in obj:
+				artillery.Gun()
+				if not 'Tank' in scene.objects:
+					pass
+				else:
+					artillery.Aim()
+			else:
+				artillery.RocketInit()
 				
+def Level5():
+	cont = logic.getCurrentController()
+	obj = cont.owner
+	scene = logic.getCurrentScene()
+	dict = logic.globalDict
+	level = dict['level']
+	scene = logic.getCurrentScene()
+	enemyID = str(obj)[len(str(obj))-4:len(str(obj))]
+	
+	if 'level' in dict:
+		regular = EnemyTemp(10, 120, 'regular')
+		kamikaze = EnemyTemp(10, 520, 'kamikaze')
+		artillery = EnemyTemp(10,120, 'artillery')
+		if obj['type'] == 'regular':
+			if 'enemy' in obj:
+				if not 'init' in obj:
+					obj['init'] = 1
+					scene.objects['CamMain']['enemies'] += 1.0
+				if not 'Tank' in scene.objects:
+					pass
+				else:
+					regular.Pathing()
+				regular.Health()	
+			elif 'gun' in obj:
+				regular.Gun()
+				if not 'Tank' in scene.objects:
+					pass
+				else:
+					regular.Aim()
+			else:
+				regular.RocketInit()
+		elif obj['type'] == 'kamikaze':
+			if 'enemy' in obj:
+				if not 'init' in obj:
+					obj['init'] = 1
+					scene.objects['CamMain']['enemies'] += 1.0
+				if 'Tank' in scene.objects:
+					kamikaze.Pathing()
+				kamikaze.Health()	
+			elif 'gun' in obj:
+				kamikaze.Gun()	
+		elif obj['type'] == 'artillery':
+			if 'enemy' in obj:
+				if not 'init' in obj:
+					obj['init'] = 1
+					scene.objects['CamMain']['enemies'] += 1.0
+				if not 'Tank' in scene.objects:
+					pass
+				else:
+					artillery.Pathing()
+				artillery.Health()	
+			elif 'gun' in obj:
+				artillery.Gun()
+				if not 'Tank' in scene.objects:
+					pass
+				else:
+					artillery.Aim()
+			else:
+				artillery.RocketInit()
 	
 def Rocket():
 	
@@ -328,35 +570,169 @@ def Rocket():
 				obj['dir'] = 0.0
 			obj['time'] = 0.0
 			obj['rocket'] = True
+			obj['hp'] = 1
 	
 	def Update():
-		obj['dir'] = obj.linearVelocity
 		
-		obj.localPosition.z = 1.0
+		#obj.localPosition.z = 1.0
 		
 		scene.addObject('EffectRocket1',obj)
 		scene.addObject('EffectRocket2',obj)
 		
 		motion.useLocalDLoc = True
 		motion.useLocalDRot = True
-		#motion.dRot = [0.0, obj['ry'], 0.0]
 		motion.dLoc = [0.0, obj['speed'] ,0.0]
-		#obj.applyForce([0.0, 0.0, 9.82], 0)
+		obj.applyForce([0.0, 0.0, 9.82], 0)
 		cont.activate(motion)
 		
 		obj['time'] += 1
 		if obj['time'] > 2:
 			if collision.positive:
 				enemy = collision.hitObject
-				if not 'hp' in enemy:
-					pass
-				else:
+				if 'enemy' in enemy:
+					logic.sendMessage('hit', 'None', str(enemy))
+				if 'hp' in enemy:
 					enemy['hp'] -= 10
 				obj.endObject()
 				explosion = scene.addObject('Explosion',obj)
-				explosion['dir'] = obj['dir']
 				logic.sendMessage('rocket_explosion', 'None')
+		
+		if obj['hp'] < 1:
+			obj.endObject()
+			explosion = scene.addObject('Explosion',obj)
+			logic.sendMessage('rocket_explosion', 'None')
+		
+	Init()
+	Update()
+
+def ArtilleryRocket():
 	
+	cont = logic.getCurrentController()
+	obj = cont.owner
+	scene = logic.getCurrentScene()
+	dict = logic.globalDict
+	level= dict['level']
+	if 'Enemy%s%s' % (level,obj['id']) in scene.objects:
+		enemy = scene.objects['EnemyRocketInit%s%s' % (level,obj['id'])]
+	if 'Tank' in scene.objects:
+		tarLoc = copy.copy(scene.objects['Tank'].worldPosition)
+	motion = cont.actuators['Motion']
+	collision = cont.sensors['Collision']
+	
+	def Init():
+		if not 'init' in obj:
+			obj['init'] = 1
+			obj['shadowInit'] = False
+			if not 'speed' in obj:
+				obj['speed'] = 0.0
+			if not 'dir' in obj:
+				obj['dir'] = 0.0
+			obj['time'] = 0.0
+			obj['vectTime'] = 11
+			obj['rocket'] = True
+			obj['hp'] = 1
+			obj['vect'] = 0
+			obj['vectNum'] = 10
+			obj['rocketInitLoc'] = copy.copy(scene.objects['EnemyRocketInit%s%s' % (level,obj['id'])].worldPosition)
+			vertList = []
+			for i in range(0,obj['vectNum'] + 1):
+				endVert = (tarLoc[0] - enemy.worldPosition[0], tarLoc[1] - enemy.worldPosition[1], tarLoc[2] - enemy.worldPosition[2])
+				vertX = Scalar(endVert, mathutils.Vector((i/obj['vectNum'],i/obj['vectNum'],i/obj['vectNum'])))
+				vertZ = -1*(i**2) + i*obj['vectNum']
+				vertX[2] = vertZ
+				vert = (enemy.worldPosition[0] + vertX[0], enemy.worldPosition[1] + vertX[1],enemy.worldPosition[2] +vertZ)
+				vertList.append(vert)
+			obj['vertList'] = copy.copy(vertList)
+			obj['shadow'] = scene.addObject('Shadow', scene.objects['Tank'])
+			obj['shadow'].setVisible(False)
+	def Update():
+		
+		#enemy = scene.objects['EnemyRocketInit%s%s' % (level,obj['id'])]
+		rocketDist = .05 + Dist((obj.worldPosition[0], obj.worldPosition[1], 0.0), (obj['rocketInitLoc'][0], obj['rocketInitLoc'][1], 0.0))
+		enemyDist = Dist((obj['rocketInitLoc'][0], obj['rocketInitLoc'][1], 0.0), (obj['vertList'][obj['vect']][0], obj['vertList'][obj['vect']][1], 0.0))
+		if obj['vect'] <= (obj['vectNum'] - 1) and rocketDist >= enemyDist:
+			obj.alignAxisToVect(mathutils.Vector((obj['vertList'][obj['vect'] + 1][0] - obj['vertList'][obj['vect']][0], obj['vertList'][obj['vect'] + 1][1] - obj['vertList'][obj['vect']][1], obj['vertList'][obj['vect'] + 1][2] - obj['vertList'][obj['vect']][2])), 1, 1.0)
+			verticalDist = (Dist((0.0, 0.0, obj['vertList'][obj['vect']][2]), (0.0, 0.0, obj['vertList'][obj['vect']+1][2])))
+			obj['speed'] = (obj['vertList'][int(obj['vectNum']/2)][2] - obj.worldPosition[2])/25 + verticalDist/20 + .1
+			obj['vect'] += 1
+		if rocketDist > 0.7*(Dist(obj['rocketInitLoc'], obj['vertList'][len(obj['vertList'])-1])) and obj['shadowInit'] == False:
+			obj['shadow'].setVisible(True)
+			obj['shadow'].worldScale = [(1-(obj.worldPosition[2]/27.5)), (1-(obj.worldPosition[2]/27.5)), 1]
+		#for i in range(0,obj['vectNum']):
+		#	render.drawLine(obj['vertList'][i],obj['vertList'][i+1],[0.0,0.0,0.0])
+		
+		scene.addObject('EffectRocket1',obj)
+		scene.addObject('EffectRocket2',obj)
+		
+		motion.useLocalDLoc = True
+		motion.useLocalDRot = True
+		motion.dLoc = [0.0, obj['speed'] ,0.0]
+		obj.applyForce([0.0, 0.0, 9.82], 0)
+		cont.activate(motion)
+		
+		#render.drawLine(obj.worldPosition, obj.worldPosition + obj.orientation[0]*2, [0.0,0.0,0.0])
+		obj['time'] += 1
+		if obj['time'] > 2:
+			if obj.worldPosition[2] < 1:
+				obj['hp'] -= 10
+			if collision.positive:
+				enemy = collision.hitObject
+				if 'enemy' in enemy:
+					logic.sendMessage('hit', 'None', str(enemy))
+				if 'hp' in enemy:
+					enemy['hp'] -= 10
+				obj.endObject()
+				scene.objects['Shadow'].endObject()
+				explosion = scene.addObject('Explosion',obj)
+				logic.sendMessage('rocket_explosion', 'None')
+		
+		if obj['hp'] < 1:
+			obj.endObject()
+			scene.objects['Shadow'].endObject()
+			explosion = scene.addObject('Explosion',obj)
+			logic.sendMessage('rocket_explosion', 'None')
+		
+	Init()
+	Update()
+	
+def Mine():
+	
+	cont = logic.getCurrentController()
+	obj = cont.owner
+	scene = logic.getCurrentScene()
+	dict = logic.globalDict
+	level = dict['level']
+	enemyID = str(obj)[len(str(obj))-4:len(str(obj))]
+	collision = cont.sensors['Collision']
+	
+	def Init():
+		if not 'init' in obj:
+			obj['init'] = 1
+			obj['rocket'] = True
+			obj['dist'] = 6
+			obj['dist_evade'] = 1.5
+			obj['time'] = 0
+
+	def Update():
+		for i in range (0,361,10):
+				i *= (math.pi/180)
+				#detects if the enemy is far enough away to be allowed to lay another mine
+				ray = obj.rayCast(obj.worldPosition + mathutils.Vector((obj['dist']*math.sin(i),obj['dist']*math.cos(i),0)), obj, obj['dist'], "miner", 0, 0, 0)
+				#render.drawLine(obj.worldPosition, obj.worldPosition + mathutils.Vector((obj['dist']*math.sin(i),obj['dist']*math.cos(i),0)), [1.0, 1.0, 1.0])
+				if ray[0] != None:
+					logic.sendMessage('mine_near','',str('EnemyRocketInit%s%s' % (level, str(ray[0])[len(str(ray[0]))-4:len(str(ray[0]))])))
+		if collision.positive and obj['time'] > 10:
+			enemy = collision.hitObject
+			scene.addObject('Explosion',enemy)
+			if 'enemy' in enemy:
+				logic.sendMessage('hit', 'None', str(enemy))
+			if 'hp' in enemy:
+				enemy['hp'] -= 10
+			obj.endObject()
+			obj.parent.endObject()
+			explosion = scene.addObject('Explosion',obj)
+			logic.sendMessage('rocket_explosion', 'None')
+		obj['time'] += 1
 	Init()
 	Update()
 	

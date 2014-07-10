@@ -1,3 +1,19 @@
+'''
+Copyright 2014 Adam Stockermans
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+'''
+
 from bge import logic
 from bge import events
 from bge import render
@@ -114,22 +130,36 @@ def Player():
 			scene.objects['CamMain']['players'] += 1.0
 			obj['explode'] = True
 			obj['dir'] = 0.0
+			obj['trailTime'] = 0
 			
 	#Update function. Runs every logic frame when TRUE level triggering is active
 	def Update():
+		obj['trailTime'] += 1
 		#left/right motion
 		if kbleft > 0:
 			obj['mx'] += -obj['accel']
+			if obj['trailTime'] > 2:
+				obj['trailTime'] = 0
+				scene.addObject('Trail', obj, 1000)
 		elif kbright > 0:
 			obj['mx'] += obj['accel']
+			if obj['trailTime'] > 2:
+				obj['trailTime'] = 0
+				scene.addObject('Trail', obj, 1000)
 		else:
 			obj['mx'] *= (1-obj['friction'])
 		
 		#up/down motion		
 		if kbup > 0:
 			obj['my'] += obj['accel']
+			if obj['trailTime'] > 2:
+				obj['trailTime'] = 0
+				scene.addObject('Trail', obj, 1000)
 		elif kbdown > 0:
 			obj['my'] += -obj['accel']
+			if obj['trailTime'] > 2:
+				obj['trailTime'] = 0
+				scene.addObject('Trail', obj, 1000)
 		else:
 			obj['my'] *= (1-obj['friction'])
 
@@ -298,6 +328,7 @@ def Rocket():
 	def Init():
 		if not 'init' in obj:
 			obj['init'] = 1
+			obj['hp'] = 1
 			if not 'speed' in obj:
 				obj['speed'] = 0.0
 			if not 'dir' in obj:
@@ -309,17 +340,13 @@ def Rocket():
 			obj['time'] = 0.0
 	
 	def Update():
-		obj['dir'] = obj.worldLinearVelocity
-		obj.worldPosition = [obj.worldPosition[0], obj.worldPosition[1], 1.0]
-		
 		scene.addObject('EffectRocket1',obj)
 		scene.addObject('EffectRocket2',obj)		
 		motion.useLocalDLoc = True
 		motion.useLocalDRot = True
 		motion.dLoc = [0.0, obj['speed'] ,0.0]
-		#obj.applyForce([0.0, 0.0, 9.82], 0)
+		obj.applyForce([0.0, 0.0, 9.82], 0)
 		cont.activate(motion)
-		#print(obj.orientation)
 		
 	def BounceAngle():
 		if Bounce(obj['speed'], obj['front'], obj['side'], obj['side'], 'wall') != mathutils.Vector((0.0, 0.0, 0.0)):
@@ -379,8 +406,8 @@ def Rocket():
 				enemy['hp'] -= 10
 			obj.endObject()
 			explosion = scene.addObject('Explosion',obj)
-			explosion['dir'] = obj['dir']
-		
+		if obj['hp'] < 1:
+			obj.endObject()
 		if obj['time'] > 600:
 			obj.endObject()
 		
@@ -394,20 +421,22 @@ def Rocket():
 		posL = obj.worldPosition + Scalar(obj.orientation[0], mathutils.Vector((-1,1,1)))*.5
 		posR = obj.worldPosition - Scalar(obj.orientation[0], mathutils.Vector((-1,1,1)))*.5
 		
-		ray = obj.rayCast(toPos, obj, 100, '', 1, 0)
-		rayL = obj.rayCast(posL + Scalar(obj.orientation[1], mathutils.Vector((-1,1,1))), posL, 100, '', 1, 0)
-		rayR = obj.rayCast(posR + Scalar(obj.orientation[1], mathutils.Vector((-1,1,1))), posR, 100, '', 1, 0)
-		if ray[1] != None:
+		ray = obj.rayCast(toPos, obj, 10000, '', 1, 0)
+		rayL = obj.rayCast(posL + Scalar(obj.orientation[1], mathutils.Vector((-1,1,1))), posL, 10000, '', 1, 0)
+		rayR = obj.rayCast(posR + Scalar(obj.orientation[1], mathutils.Vector((-1,1,1))), posR, 10000, '', 1, 0)
+		
+		'''print("ray: ", ray[0])
+		print("rayL: ", rayL[0])
+		print("rayR: ", rayR[0])
+		print('*************************************')'''
+		
+		if ray[1] != None or rayL[1] != None or rayR[1] != None:
 			hitPos = [ray[1][0], ray[1][1], ray[1][2]]
 			hitPosL = [rayL[1][0], rayL[1][1], rayL[1][2]]
 			hitPosR = [rayR[1][0], rayR[1][1], rayR[1][2]]
-			#render.drawLine(obj.position, hitPos, [0.0, 1.0, 0.0])
-			#render.drawLine(posL, hitPosL, [0.0, 1.0, 0.0])
-			#render.drawLine(posR, hitPosR, [0.0, 1.0, 0.0])
-		ray = obj.rayCast(toPos, obj, 100, 'enemy', 1, 0)
-		rayL = obj.rayCast(posL + Scalar(obj.orientation[1], mathutils.Vector((-1,1,1))), posL, 100, 'enemy', 1, 0)
-		rayR = obj.rayCast(posR + Scalar(obj.orientation[1], mathutils.Vector((-1,1,1))), posR, 100, 'enemy', 1, 0)
-	
+		#render.drawLine(obj.position, hitPos, [0.0, 1.0, 0.0])
+		#render.drawLine(posL, hitPosL, [0.0, 1.0, 0.0])
+		#render.drawLine(posR, hitPosR, [0.0, 1.0, 0.0])
 		if ray != None or rayL != None or rayR != None:
 			if ray[0] != None:
 				if Dist(ray[1], scene.objects['EvadeL'].worldPosition) > Dist(ray[1], scene.objects['EvadeR'].worldPosition):
@@ -424,7 +453,7 @@ def Rocket():
 					logic.sendMessage('hit_L', 'None', str(rayR[0]))
 				else:
 					logic.sendMessage('hit_R', 'None', str(rayR[0]))
-				
+					
 	Init()
 	Update()
 	Message()

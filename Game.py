@@ -1,3 +1,19 @@
+'''
+Copyright 2014 Adam Stockermans
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+'''
+
 from bge import logic
 from bge import render
 import mathutils
@@ -156,7 +172,7 @@ def Level0():
 			logic.addScene('Controls')
 			if not 'score' in dict:
 				dict['score'] = 0
-			if not 'score' in dict:
+			if not 'levelscore' in dict:
 				dict['levelScore'] = 0
 			if not 'levelClock' in dict:
 				dict['levelClock']= 0
@@ -164,6 +180,7 @@ def Level0():
 				dict['tank_kills'] = 0
 			if not 'rocket_kills' in dict:
 				dict['rocket_kills'] = 0
+			dict['breakable'] = False
 	
 	def Update():
 		pass
@@ -193,6 +210,7 @@ def Level1():
 			dict['levelClock']= 0
 			dict['tank_kills'] = 0
 			dict['rocket_kills'] = 0
+			dict['breakable'] = False
 	
 	def Update():
 		pass
@@ -220,7 +238,8 @@ def Level2():
 			dict['levelClock']= 0
 			dict['tank_kills'] = 0
 			dict['rocket_kills'] = 0
-	
+			dict['breakable'] = False
+			
 	def Update():
 		pass
 	
@@ -247,6 +266,7 @@ def Level3():
 			dict['levelClock']= 0
 			dict['tank_kills'] = 0
 			dict['rocket_kills'] = 0
+			dict['breakable'] = False
 	
 	def Update():
 		pass
@@ -254,6 +274,63 @@ def Level3():
 	Init()
 	Update()	
 
+def Level4():
+	
+	cont = logic.getCurrentController()
+	obj = cont.owner
+	scene = logic.getCurrentScene()
+	dict = logic.globalDict
+	scenes = logic.getSceneList()
+	
+	def Init():
+		if not 'init' in obj:
+			obj['init'] = 1
+			dict['level'] = 4
+			if not 'Score' in scenes:
+				logic.addScene('Score')
+			if not 'score' in dict:
+				dict['score'] = 0
+			dict['levelScore'] = 0
+			dict['levelClock']= 0
+			dict['tank_kills'] = 0
+			dict['rocket_kills'] = 0
+			scene.objects['CamMain']['enemies'] = 1
+	
+	def Update():
+		pass
+	
+	Init()
+	Update()		
+
+def Level5():
+	
+	cont = logic.getCurrentController()
+	obj = cont.owner
+	scene = logic.getCurrentScene()
+	dict = logic.globalDict
+	scenes = logic.getSceneList()
+	
+	def Init():
+		if not 'init' in obj:
+			obj['init'] = 1
+			dict['level'] = 5
+			if not 'Score' in scenes:
+				logic.addScene('Score')
+			if not 'score' in dict:
+				dict['score'] = 0
+			dict['levelScore'] = 0
+			dict['levelClock']= 0
+			dict['tank_kills'] = 0
+			dict['rocket_kills'] = 0
+			scene.objects['CamMain']['enemies'] = 1
+			dict['breakable'] = False
+	
+	def Update():
+		pass
+	
+	Init()
+	Update()		
+	
 def Explosion():
 	
 	cont = logic.getCurrentController()
@@ -382,11 +459,13 @@ def Breakable():
 	cont = logic.getCurrentController()
 	obj = cont.owner
 	scene = logic.getCurrentScene()
+	dict = logic.globalDict
 	
 	def Init():
 		if not 'init' in obj:
 			obj['init'] = 1
 			obj['hp'] = 10
+			dict['breakable'] = False
 	
 	def Update():
 		if obj['hp'] <= 0:
