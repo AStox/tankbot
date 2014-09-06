@@ -187,7 +187,7 @@ def Player():
 			obj.endObject()
 			scene.objects['TankGun'].endObject()
 			scene.objects['CamMain']['players'] -= 1
-	
+		
 	Init()
 	Update()
 	Animate()
@@ -398,7 +398,7 @@ def Rocket():
 			dict['rocket_kills'] += 1
 			scene.addObject('Plus_10',obj,40)
 			scene.objects['Plus_10'].alignAxisToVect([1.0,0,0],0,1.0)
-		if collision.positive and obj['time'] > 2:
+		if collision.positive:
 			enemy = collision.hitObject
 			if 'enemy' in enemy:
 				logic.sendMessage('hit', 'None', str(enemy))
@@ -453,7 +453,7 @@ def Rocket():
 					logic.sendMessage('hit_L', 'None', str(rayR[0]))
 				else:
 					logic.sendMessage('hit_R', 'None', str(rayR[0]))
-					
+	
 	Init()
 	Update()
 	Message()

@@ -34,7 +34,7 @@ def Game():
 	def Init():
 		if not 'init' in obj:
 			obj['init'] = 1
-			obj['newLevel'] = 0
+			dict['newLevel'] = 0
 			obj['target'] = scene.objects['Tank']
 			obj['depth'] = obj.position.y - obj['target'].position.y
 			obj['end'] = False
@@ -60,14 +60,6 @@ def Game():
 			dict['paused'] = True
 			logic.addScene('Pause')
 			scene.suspend()
-		"""elif pause.positive and dict['paused'] == True:
-			dict['paused'] = False
-			for i in scenes:
-					if 'Pause' in i.name:
-						i.end()"""
-		
-		#while dict['paused'] == True:
-			#scene.suspend()
 		
 		
 	def Next():
@@ -104,7 +96,7 @@ def Game():
 		
 	def Countdown():
 		logic.addScene('Countdown',True)
-		obj['newLevel'] += 1
+		dict['newLevel'] += 1
 		
 	Init()
 	Update()
@@ -116,7 +108,7 @@ def Game():
 		Next()
 	if not 'Next' in scenes:
 		Gameover()
-	if obj['newLevel'] == 0:
+	if dict['newLevel'] == 0:
 		Countdown()
 	
 def CountdownAction():
@@ -329,6 +321,64 @@ def Level5():
 		pass
 	
 	Init()
+	Update()	
+
+def Level6():
+	
+	cont = logic.getCurrentController()
+	obj = cont.owner
+	scene = logic.getCurrentScene()
+	dict = logic.globalDict
+	scenes = logic.getSceneList()
+	
+	def Init():
+		if not 'init' in obj:
+			obj['init'] = 1
+			dict['level'] = 6
+			if not 'Score' in scenes:
+				logic.addScene('Score')
+			if not 'score' in dict:
+				dict['score'] = 0
+			dict['levelScore'] = 0
+			dict['levelClock']= 0
+			dict['tank_kills'] = 0
+			dict['rocket_kills'] = 0
+			scene.objects['CamMain']['enemies'] = 1
+			dict['breakable'] = False
+	
+	def Update():
+		pass
+	
+	Init()
+	Update()		
+
+def Level7():
+	
+	cont = logic.getCurrentController()
+	obj = cont.owner
+	scene = logic.getCurrentScene()
+	dict = logic.globalDict
+	scenes = logic.getSceneList()
+	
+	def Init():
+		if not 'init' in obj:
+			obj['init'] = 1
+			dict['level'] = 7
+			if not 'Score' in scenes:
+				logic.addScene('Score')
+			if not 'score' in dict:
+				dict['score'] = 0
+			dict['levelScore'] = 0
+			dict['levelClock']= 0
+			dict['tank_kills'] = 0
+			dict['rocket_kills'] = 0
+			scene.objects['CamMain']['enemies'] = 1
+			dict['breakable'] = False
+	
+	def Update():
+		pass
+	
+	Init()
 	Update()		
 	
 def Explosion():
@@ -432,25 +482,20 @@ def Timer():
 		dict['levelClock'] += 1.0/(10*logic.getLogicTicRate())
 	Init()
 	Update()
-
-def Switch():
+	
+def Level():
 	
 	cont = logic.getCurrentController()
 	obj = cont.owner
 	scene = logic.getCurrentScene()
-	collision = cont.sensors['Collision']
 	dict = logic.globalDict
-	level = dict['level']
-	switchID = str(obj)[len(str(obj))-4:len(str(obj))]
 	
 	def Init():
 		if not 'init' in obj:
 			obj['init'] = 1
-	
+			
 	def Update():
-		if collision.positive:
-			logic.sendMessage('switch%s%s' % (level, switchID), 'None')
-	
+		scene.addObject('Num_%s' % dict['level'], obj, 1)
 	Init()
 	Update()
 

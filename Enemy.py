@@ -140,7 +140,7 @@ class EnemyTemp(object):
 			obj['trailTime'] = 0
 		
 		if self.type != 'artillery':
-			obj['trail'] = True
+			obj['trail'] = False
 			obj['trailTime'] += 1
 			for i in range (0,361,30):
 				i *= (math.pi/180)	
@@ -307,7 +307,7 @@ class EnemyTemp(object):
 					rocket['type'] = 'player'
 		
 		elif self.type == 'artillery':
-			if 'Tank' in scene.objects and obj['shottimer'] >= self.shot_cd and obj.getDistanceTo(scene.objects['Tank']) < 50:
+			if 'Tank' in scene.objects and obj['shottimer'] >= self.shot_cd and obj.getDistanceTo(scene.objects['Tank']) < 35:
 				obj['shottimer'] = 0.0
 				rocket = scene.addObject('ArtilleryRocket',obj)
 				rocket['speed'] = 0.25
@@ -551,7 +551,127 @@ def Level5():
 					artillery.Aim()
 			else:
 				artillery.RocketInit()
+
+def Level6():
+	cont = logic.getCurrentController()
+	obj = cont.owner
+	scene = logic.getCurrentScene()
+	dict = logic.globalDict
+	level = dict['level']
+	scene = logic.getCurrentScene()
+	enemyID = str(obj)[len(str(obj))-4:len(str(obj))]
 	
+	if 'level' in dict:
+		regular = EnemyTemp(10, 120, 'regular')
+		kamikaze = EnemyTemp(10, 520, 'kamikaze')
+		artillery = EnemyTemp(10,120, 'artillery')
+		if obj['type'] == 'regular':
+			if 'enemy' in obj:
+				if not 'init' in obj:
+					obj['init'] = 1
+					scene.objects['CamMain']['enemies'] += 1.0
+				if not 'Tank' in scene.objects:
+					pass
+				else:
+					regular.Pathing()
+				regular.Health()	
+			elif 'gun' in obj:
+				regular.Gun()
+				if not 'Tank' in scene.objects:
+					pass
+				else:
+					regular.Aim()
+			else:
+				regular.RocketInit()
+		elif obj['type'] == 'kamikaze':
+			if 'enemy' in obj:
+				if not 'init' in obj:
+					obj['init'] = 1
+					scene.objects['CamMain']['enemies'] += 1.0
+				if 'Tank' in scene.objects:
+					kamikaze.Pathing()
+				kamikaze.Health()	
+			elif 'gun' in obj:
+				kamikaze.Gun()	
+		elif obj['type'] == 'artillery':
+			if 'enemy' in obj:
+				if not 'init' in obj:
+					obj['init'] = 1
+					scene.objects['CamMain']['enemies'] += 1.0
+				if not 'Tank' in scene.objects:
+					pass
+				else:
+					artillery.Pathing()
+				artillery.Health()	
+			elif 'gun' in obj:
+				artillery.Gun()
+				if not 'Tank' in scene.objects:
+					pass
+				else:
+					artillery.Aim()
+			else:
+				artillery.RocketInit()
+
+def Level7():
+	cont = logic.getCurrentController()
+	obj = cont.owner
+	scene = logic.getCurrentScene()
+	dict = logic.globalDict
+	level = dict['level']
+	scene = logic.getCurrentScene()
+	enemyID = str(obj)[len(str(obj))-4:len(str(obj))]
+	
+	if 'level' in dict:
+		regular = EnemyTemp(10, 120, 'regular')
+		kamikaze = EnemyTemp(10, 520, 'kamikaze')
+		artillery = EnemyTemp(10,120, 'artillery')
+		if obj['type'] == 'regular':
+			if 'enemy' in obj:
+				if not 'init' in obj:
+					obj['init'] = 1
+					scene.objects['CamMain']['enemies'] += 1.0
+				if not 'Tank' in scene.objects:
+					pass
+				else:
+					regular.Pathing()
+				regular.Health()	
+			elif 'gun' in obj:
+				regular.Gun()
+				if not 'Tank' in scene.objects:
+					pass
+				else:
+					regular.Aim()
+			else:
+				regular.RocketInit()
+		elif obj['type'] == 'kamikaze':
+			if 'enemy' in obj:
+				if not 'init' in obj:
+					obj['init'] = 1
+					scene.objects['CamMain']['enemies'] += 1.0
+				if 'Tank' in scene.objects:
+					kamikaze.Pathing()
+				kamikaze.Health()	
+			elif 'gun' in obj:
+				kamikaze.Gun()	
+		elif obj['type'] == 'artillery':
+			if 'enemy' in obj:
+				if not 'init' in obj:
+					obj['init'] = 1
+					scene.objects['CamMain']['enemies'] += 1.0
+				if not 'Tank' in scene.objects:
+					pass
+				else:
+					artillery.Pathing()
+				artillery.Health()	
+			elif 'gun' in obj:
+				artillery.Gun()
+				if not 'Tank' in scene.objects:
+					pass
+				else:
+					artillery.Aim()
+			else:
+				artillery.RocketInit()
+				
 def Rocket():
 	
 	cont = logic.getCurrentController()
@@ -647,7 +767,6 @@ def ArtilleryRocket():
 			obj['shadow'].setVisible(False)
 	def Update():
 		
-		#enemy = scene.objects['EnemyRocketInit%s%s' % (level,obj['id'])]
 		rocketDist = .05 + Dist((obj.worldPosition[0], obj.worldPosition[1], 0.0), (obj['rocketInitLoc'][0], obj['rocketInitLoc'][1], 0.0))
 		enemyDist = Dist((obj['rocketInitLoc'][0], obj['rocketInitLoc'][1], 0.0), (obj['vertList'][obj['vect']][0], obj['vertList'][obj['vect']][1], 0.0))
 		if obj['vect'] <= (obj['vectNum'] - 1) and rocketDist >= enemyDist:

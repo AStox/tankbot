@@ -84,6 +84,18 @@ class Button(object):
 				logic.restartGame()
 		obj['time'] += 1
 		
+	def Menu(self):
+		cont = logic.getCurrentController()
+		obj = cont.owner
+		scene = logic.getCurrentScene()
+		mouse = cont.sensors['Mouse']
+		mouseEvents = logic.mouse.events
+		click = mouseEvents[events.LEFTMOUSE]
+		if obj['time'] > 3:
+			if click:
+				logic.restartGame()
+		obj['time'] += 1
+		
 	def Again(self):
 		cont = logic.getCurrentController()
 		scene = logic.getCurrentScene()
@@ -204,6 +216,25 @@ def Gameover():
 		gameover = Button()
 		gameover.mouseOver()
 		gameover.Gameover()
+	
+	Init()
+	Update()
+	
+def Menu():
+	
+	def Init():
+		cont = logic.getCurrentController()
+		obj = cont.owner
+		if not 'init' in obj:
+			obj['init'] = 1
+			obj['var'] = 0
+			obj['time'] = 0
+	
+	def Update():
+		
+		menu = Button()
+		menu.mouseOver()
+		menu.Gameover()
 	
 	Init()
 	Update()
