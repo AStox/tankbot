@@ -340,6 +340,7 @@ def Rocket():
 			obj['time'] = 0.0
 	
 	def Update():
+		obj.worldPosition.z = 1
 		scene.addObject('EffectRocket1',obj)
 		scene.addObject('EffectRocket2',obj)		
 		motion.useLocalDLoc = True
@@ -400,12 +401,15 @@ def Rocket():
 			scene.objects['Plus_10'].alignAxisToVect([1.0,0,0],0,1.0)
 		if collision.positive:
 			enemy = collision.hitObject
-			if 'enemy' in enemy:
-				logic.sendMessage('hit', 'None', str(enemy))
-			if 'hp' in enemy:
-				enemy['hp'] -= 10
-			obj.endObject()
-			explosion = scene.addObject('Explosion',obj)
+			if 'player' in enemy and obj['time'] < 5.0:
+				pass
+			else:
+				if 'enemy' in enemy:
+					logic.sendMessage('hit', 'None', str(enemy))
+				if 'hp' in enemy:
+					enemy['hp'] -= 10
+				obj.endObject()
+				explosion = scene.addObject('Explosion',obj)
 		if obj['hp'] < 1:
 			obj.endObject()
 		if obj['time'] > 600:
