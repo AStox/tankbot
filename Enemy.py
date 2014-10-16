@@ -22,33 +22,33 @@ import mathutils
 import copy
 import random
 
-def Dist(vector1,vector2):
+def Dist(vector1,vector2): #Distance function. Used below
 	x = vector1[0] - vector2[0]
 	y = vector1[1] - vector2[1]
 	z = vector1[2] - vector2[2]
 	return math.sqrt(math.sqrt(x**2+y**2)+z**2)
 
-def Scalar(vector1, vector2):
+def Scalar(vector1, vector2): #Scalar Multiplication of vectors. Used below
 	x = vector1[0] * vector2[0]
 	y = vector1[1] * vector2[1]
 	z = vector1[2] * vector2[2]
 	
 	return mathutils.Vector((x, y, z))
 	
-def AbsVec(vector):
+def AbsVec(vector): #Converts a vector to the absolute values of its parts.
 	x = abs(vector[0])
 	y = abs(vector[1])
 	z = abs(vector[2])
 	
 	return mathutils.Vector((x, y, z))
 
-def VectorMagnitude(vector):
+def VectorMagnitude(vector): #returns the magnitude of a vector
 	return math.sqrt(vector[0]**2 + vector[1]**2 + vector[2]**2)
 	
-def Angle(vector1, vector2):
+def Angle(vector1, vector2): #returns the angle between two vectors
 	return (180/math.pi)	* math.acos((Scalar(vector1, vector2)[0] + Scalar(vector1, vector2)[1] + Scalar(vector1, vector2)[2])/(VectorMagnitude(vector1)*VectorMagnitude(vector2)))
 	
-def Max(value, max, min):
+def Max(value, max, min): #Determines if a value is larger or smaller than a specified Max/Min.
 	if value > max:
 		return max
 	elif value < min:
@@ -56,7 +56,7 @@ def Max(value, max, min):
 	else:
 		return value
 
-def Sign(value):
+def Sign(value): #Determines if a number is + or -.
 	if value > 0:
 		return 1
 	elif value < 0:
@@ -64,7 +64,7 @@ def Sign(value):
 	else:
 		return 0
 
-def AxisCheck(my, front = 1.0, left = 1.0, right = 1.0, prop = 'wall'):
+def AxisCheck(my, front = 1.0, left = 1.0, right = 1.0, prop = 'wall'): #Function used to double check collisions.
 
 	cont = logic.getCurrentController()
 	obj = cont.owner
@@ -80,10 +80,9 @@ def AxisCheck(my, front = 1.0, left = 1.0, right = 1.0, prop = 'wall'):
 	toPosRight.y += front + my
 	toPosRight.x += right + my
 	
-	#return obj.rayCast(To Position, From Position, Distance (0=infinity), With Property, 1, 1)
 	return (obj.rayCast(toPosFront, pos, 0, prop, 1, 1)[0], obj.rayCast(toPosLeft, pos, 0, prop, 1, 1)[0], obj.rayCast(toPosRight, pos, 0, prop, 1, 1)[0])
 
-class EnemyTemp(object):
+class EnemyTemp(object): #General enemy class
 	
 	def __init__(self, hp, shot_cd, type):
 		cont = logic.getCurrentController()
@@ -110,7 +109,6 @@ class EnemyTemp(object):
 		dict = logic.globalDict
 		level = dict['level']
 		enemyID = str(obj)[len(str(obj))-4:len(str(obj))]
-		#print(scene.objects)
 		
 		def Init():
 			if not 'init1' in obj:
@@ -122,11 +120,8 @@ class EnemyTemp(object):
 				obj['trail'] = False
 				if self.type == 'kamikaze':
 					obj['following'] = False
+	
 		Init()
-		
-		
-		#if 'Navmesh%s.000' % level in scene.objects:
-		#	steering.navmesh = scene.objects['Navmesh%s.000' % level]
 			
 		evadeR = scene.objects['EvadeR']
 		evadeL = scene.objects['EvadeL']
@@ -139,11 +134,12 @@ class EnemyTemp(object):
 			scene.addObject('Trail', obj, 1000)
 			obj['trailTime'] = 0
 		
-		if self.type != 'artillery':
+		if self.type != 'artillery': #Lines 138 to 195 deal with pathing, follow and evade behaviours.
 			obj['trail'] = False
 			obj['trailTime'] += 1
 			for i in range (0,361,30):
 				i *= (math.pi/180)	
+				
 				#Evading to the left
 				if self.type == 'regular' and messageL.positive and obj['evadeTimer']:
 					if 'Rocket' in scene.objects:
@@ -154,9 +150,7 @@ class EnemyTemp(object):
 						cont.activate(steering)
 						steering.target = scene.objects['EvadeR']
 						obj['evadeTimer'] = 0
-						#print(scene.objects['Rocket'].orientation[0])
-						#render.drawLine(obj.worldPosition, scene.objects['EvadeR'].worldPosition,(1.0,1.0,1.0))
-						#print("L")
+						
 				#Evading to the right
 				elif self.type == 'regular' and messageR.positive and obj['evadeTimer']:
 					if 'Rocket' in scene.objects:
@@ -167,16 +161,14 @@ class EnemyTemp(object):
 						cont.activate(steering)
 						steering.target = scene.objects['EvadeL']
 						obj['evadeTimer'] = 0
-						#render.drawLine(obj.worldPosition, scene.objects['EvadeL'].worldPosition,(1.0,1.0,1.0))
-						#print("R")
+						
 				#Following Player
 				elif self.type == 'regular' and obj.rayCast('Tank', obj, 0, 'player', 0, 0)[0] == None and obj['evadeTimer'] >= 50:
 					steering.behavior = 3
 					steering.distance = 1
 					steering.target = scene.objects['Tank']
 					cont.activate(steering)
-					#render.drawLine(obj.worldPosition, steering.target.worldPosition, [1.0, 1.0, 1.0])
-					#print("Tank")
+					
 				#Keeping distance from obstacles
 				elif obj.rayCast(obj.worldPosition + mathutils.Vector((2.5*math.sin(i),2.5*math.cos(i),0)), obj, 2.5, "", 0, 0, 0)[0] != None and obj['evadeTimer'] >= 50:
 					evadeObject = scene.addObject('Evade', obj, 50)
@@ -185,20 +177,20 @@ class EnemyTemp(object):
 					steering.distance = 1000
 					cont.activate(steering)
 					steering.target = scene.objects['Evade']
-					#render.drawLine(obj.worldPosition, obj.worldPosition + mathutils.Vector((5*math.sin(i),5*math.cos(i),0)), [1.0, 1.0, 1.0])
-					#print("Wall")
-				#kamikaze following player
+
+				#kamikaze type enemy following player
 				elif self.type == 'kamikaze' and obj['following'] == True:
 					steering.behavior = 3
 					steering.distance = 0
 					steering.target = scene.objects['Tank']
 					cont.activate(steering)
-					#print("kamikaze")
+					
 				else:
 					obj['trail'] = False
 					cont.deactivate(steering)
 					
-	def Health(self):
+	def Health(self): #Controls the death of enemies
+	
 		cont = logic.getCurrentController()
 		obj = cont.owner
 		dict = logic.globalDict
@@ -229,7 +221,7 @@ class EnemyTemp(object):
 			logic.sendMessage('explosion', 'None')
 			obj.endObject()
 			
-	def Gun(self):
+	def Gun(self): #Controls gun position
 		cont = logic.getCurrentController()
 		obj = cont.owner
 		scene = logic.getCurrentScene()
@@ -237,7 +229,7 @@ class EnemyTemp(object):
 		if self.type == 'miner':
 			obj.orientation = obj['parent'].orientation
 	
-	def Aim(self):
+	def Aim(self): #Controls gun rotation. Is programmed to take into account the player's speed and direction for more accurate shots.
 		cont = logic.getCurrentController()
 		obj = cont.owner
 		scene = logic.getCurrentScene()
@@ -261,7 +253,7 @@ class EnemyTemp(object):
 			ori.z = obj['dir']
 			obj.orientation = ori
 			
-			if self.type == 'artillery':
+			if self.type == 'artillery': #Artillery type enemies do not take into account Player's speed and direction.
 				obj['vectNum'] = 10
 				enemy = obj
 				if 'Tank' in scene.objects:
@@ -272,7 +264,7 @@ class EnemyTemp(object):
 				vect = mathutils.Vector((vertX[0], vertX[1], vertZ))
 				obj.alignAxisToVect(vect, 1, 1)
 		
-	def RocketInit(self):
+	def RocketInit(self): #Function controlling instantiation of rockets. Run by the RocketInit object in Blender.
 		cont = logic.getCurrentController()
 		obj = cont.owner
 		scene = logic.getCurrentScene()
@@ -280,7 +272,6 @@ class EnemyTemp(object):
 		level = dict['level']
 		enemyID = str(obj)[len(str(obj))-4:len(str(obj))]
 		parent = scene.objects['Enemy%s%s' % (level, enemyID)]
-		#obj.worldPosition = [parent.worldPosition[0] + Scalar(parent.orientation, mathutils.Vector((-1,1,1)))[0], parent.worldPosition[1] + scalar(parent.orientation, mathutils.Vector((-1,1,1)))[1], 0.5]
 		
 		if self.type == 'regular':
 			obj.worldPosition.z = 1
@@ -314,7 +305,12 @@ class EnemyTemp(object):
 				rocket['type'] = 'player'
 				rocket['id'] = enemyID
 
-def Level0():
+				
+#The level functions control what enemies are present in each level and their behaviours.
+#For example, Level0, the "Controls" level at the start of the game has a regular enemy that does not attack.
+				
+def Level0(): 
+
 	cont = logic.getCurrentController()
 	obj = cont.owner
 	scene = logic.getCurrentScene()
@@ -430,12 +426,6 @@ def Level4():
 	level = dict['level']
 	scene = logic.getCurrentScene()
 	enemyID = str(obj)[len(str(obj))-4:len(str(obj))]
-	'''	dict['Navmesh'] = 
-	
-	if 'Navmesh%s.000' % level in scene.objects and dict['breakable'] == False:
-			steering.navmesh = scene.objects['Navmesh%s.000' % level]
-	elif 'Navmesh%s.001' % level in scene.objects and dict['breakable'] == True:
-			steering.navmesh = scene.objects['Navmesh%s.001' % level]'''
 	
 	if 'level' in dict:
 		regular = EnemyTemp(10, 120, 'regular')
@@ -672,7 +662,7 @@ def Level7():
 			else:
 				artillery.RocketInit()
 				
-def Rocket():
+def Rocket(): #Function controlling general rocket behaviour and death.
 	
 	cont = logic.getCurrentController()
 	obj = cont.owner
@@ -693,8 +683,6 @@ def Rocket():
 			obj['hp'] = 1
 	
 	def Update():
-		
-		#obj.localPosition.z = 1.0
 		
 		scene.addObject('EffectRocket1',obj)
 		scene.addObject('EffectRocket2',obj)
@@ -725,7 +713,7 @@ def Rocket():
 	Init()
 	Update()
 
-def ArtilleryRocket():
+def ArtilleryRocket(): #This function controls rocket behaviour and death for Artillery rockets, as well as their trajectory and shadow.
 	
 	cont = logic.getCurrentController()
 	obj = cont.owner
@@ -777,8 +765,6 @@ def ArtilleryRocket():
 		if rocketDist > 0.7*(Dist(obj['rocketInitLoc'], obj['vertList'][len(obj['vertList'])-1])) and obj['shadowInit'] == False:
 			obj['shadow'].setVisible(True)
 			obj['shadow'].worldScale = [(1-(obj.worldPosition[2]/27.5)), (1-(obj.worldPosition[2]/27.5)), 1]
-		#for i in range(0,obj['vectNum']):
-		#	render.drawLine(obj['vertList'][i],obj['vertList'][i+1],[0.0,0.0,0.0])
 		
 		scene.addObject('EffectRocket1',obj)
 		scene.addObject('EffectRocket2',obj)
@@ -789,7 +775,6 @@ def ArtilleryRocket():
 		obj.applyForce([0.0, 0.0, 9.82], 0)
 		cont.activate(motion)
 		
-		#render.drawLine(obj.worldPosition, obj.worldPosition + obj.orientation[0]*2, [0.0,0.0,0.0])
 		obj['time'] += 1
 		if obj['time'] > 2:
 			if obj.worldPosition[2] < 1:
@@ -814,7 +799,7 @@ def ArtilleryRocket():
 	Init()
 	Update()
 	
-def Mine():
+def Mine(): #Mines were removed from the game, but I figured I would leave this in here as inspiration if I ever decide to bring them back.
 	
 	cont = logic.getCurrentController()
 	obj = cont.owner
@@ -837,7 +822,6 @@ def Mine():
 				i *= (math.pi/180)
 				#detects if the enemy is far enough away to be allowed to lay another mine
 				ray = obj.rayCast(obj.worldPosition + mathutils.Vector((obj['dist']*math.sin(i),obj['dist']*math.cos(i),0)), obj, obj['dist'], "miner", 0, 0, 0)
-				#render.drawLine(obj.worldPosition, obj.worldPosition + mathutils.Vector((obj['dist']*math.sin(i),obj['dist']*math.cos(i),0)), [1.0, 1.0, 1.0])
 				if ray[0] != None:
 					logic.sendMessage('mine_near','',str('EnemyRocketInit%s%s' % (level, str(ray[0])[len(str(ray[0]))-4:len(str(ray[0]))])))
 		if collision.positive and obj['time'] > 10:

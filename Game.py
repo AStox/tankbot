@@ -20,7 +20,7 @@ import mathutils
 import time
 import random
 	
-def Game():
+def Game(): #The main Game function is run from the camera object and controls camera movement, level switching, countdowns, gameovers, etc...
 	
 	cont = logic.getCurrentController()
 	obj = cont.owner
@@ -111,7 +111,7 @@ def Game():
 	if dict['newLevel'] == 0:
 		Countdown()
 	
-def CountdownAction():
+def CountdownAction(): #A function to pause the game when countdown is happening and resume when it's over.
 	
 	cont = logic.getCurrentController()
 	obj = cont.owner
@@ -147,7 +147,9 @@ def CountdownAction():
 	Init()
 	Update()
 
-def Level0():
+def Level0(): 
+#These level functions are mainly for debugging purposes, giving default values to to score and stuff so the game doesn't throw up errors if I start the game at level 3 instead of at the start.
+#They also keep track of the  current level for the rest of the code. These are run by the ground objects of each level.
 	
 	cont = logic.getCurrentController()
 	obj = cont.owner
@@ -381,7 +383,7 @@ def Level7():
 	Init()
 	Update()		
 	
-def Explosion():
+def Explosion(): #This function controls the explosion animation and makes sure it's destroyed when the animation is over.
 	
 	cont = logic.getCurrentController()
 	obj = cont.owner
@@ -393,14 +395,10 @@ def Explosion():
 		if not 'init' in obj:
 			obj['init'] = 1
 			obj['time'] = 0.0
-			#for i in range(1,26):
-				#bit = scene.addObject('Bit', obj, 100)
 	
 	def Update():
 		if obj['time'] > 37.0:
 			obj.endObject()
-			#scene.objects['Effect1'].endObject()
-			#scene.objects['Effect2'].endObject()
 		obj['time'] += 1.0
 		if tank_explosion.positive:
 			cont.activate(cont.actuators['Tank'])
@@ -411,29 +409,7 @@ def Explosion():
 	Init()
 	Update()
 	
-def Bit():
-	
-	cont = logic.getCurrentController()
-	obj = cont.owner
-	scene = logic.getCurrentScene()
-	
-	def Init():
-		if not 'init' in obj:
-			obj['init'] = 1
-			obj.mass = .1
-	
-	def Update():
-		fac = 2
-		obj.applyForce([0.0, 0.0, -10], 0)
-		obj.enableRigidBody()
-		obj.linearVelocity = [random.randint(-10, 10)*fac, random.randint(-10, 10)*fac, random.randint(1, 5)*fac]
-		scale = random.randint(1,4)/2
-		obj.worldScale = [scale, scale, scale]
-	
-	Init()
-	Update()
-	
-def Grid():
+def Grid(): #kills any tank that touches the "water".
 	
 	cont = logic.getCurrentController()
 	obj = cont.owner
@@ -454,7 +430,7 @@ def Grid():
 	Init()
 	Update()
 
-def Timer():
+def Timer(): #Instantiates the timer in the corner of the screen.
 	
 	cont = logic.getCurrentController()
 	obj = cont.owner
@@ -483,7 +459,7 @@ def Timer():
 	Init()
 	Update()
 	
-def Level():
+def Level(): #Instantiates the level number in the other corner of the screen.
 	
 	cont = logic.getCurrentController()
 	obj = cont.owner
@@ -499,7 +475,7 @@ def Level():
 	Init()
 	Update()
 
-def Breakable():
+def Breakable(): #Controls breakable blocks
 	
 	cont = logic.getCurrentController()
 	obj = cont.owner

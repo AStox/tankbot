@@ -21,20 +21,20 @@ import math
 import mathutils
 import time
 
-def Dist(vector1,vector2):
+def Dist(vector1,vector2): #Distance function. Used below
 	x = vector1[0] - vector2[0]
 	y = vector1[1] - vector2[1]
 	z = vector1[2] - vector2[2]
 	return math.sqrt(math.sqrt(x**2+y**2)+z**2)
 
-def Scalar(vector1, vector2):
+def Scalar(vector1, vector2): #Scalar Multiplication of vectors. Used below
 	x = vector1[0] * vector2[0]
 	y = vector1[1] * vector2[1]
 	z = vector1[2] * vector2[2]
 	
 	return mathutils.Vector((x, y, z))
 
-def Max(value, max, min):
+def Max(value, max, min): #Determines if a value is larger or smaller than a specified Max/Min.
 	if value > max:
 		return max
 	elif value < min:
@@ -42,7 +42,7 @@ def Max(value, max, min):
 	else:
 		return value
 
-def Sign(value):
+def Sign(value): #Determines if a number is + or -.
 	if value > 0:
 		return 1
 	elif value < 0:
@@ -50,7 +50,9 @@ def Sign(value):
 	else:
 		return 0
 
-def Bounce(my, front = 0.6, left = 0.2, right = 0.2, prop = 'wall'):
+def Bounce(my, front = 0.6, left = 0.2, right = 0.2, prop = 'wall'): 
+# A function used to determine the angle of the collision between a projectile and a wall.
+# Front, Left, Right arguments are the collision box dimensions of the projectile.
 
 	cont = logic.getCurrentController()
 	obj = cont.owner
@@ -76,14 +78,9 @@ def Bounce(my, front = 0.6, left = 0.2, right = 0.2, prop = 'wall'):
 		colAngle = obj.rayCast(toPosLeft, pos, 0, prop, 1, 1)[2]
 	elif obj.rayCast(toPosRight, pos, 0, prop, 1, 1)[0] != None:
 		colAngle = obj.rayCast(toPosRight, pos, 0, prop, 1, 1)[2]
-	
-	#render.drawLine(obj.position, toPosFront, [0.0, 0.0, 1.0])
-	#render.drawLine(obj.position, toPosLeft, [0.0, 0.0, 1.0])
-	#render.drawLine(obj.position, toPosRight, [0.0, 0.0, 1.0])
-	
 	return colAngle
 		
-def AxisCheck(my, front = 1.0, left = 1.0, right = 1.0, prop = 'wall'):
+def AxisCheck(my, front = 1.0, left = 1.0, right = 1.0, prop = 'wall'): #Function used to double check collisions.
 
 	cont = logic.getCurrentController()
 	obj = cont.owner
@@ -99,25 +96,20 @@ def AxisCheck(my, front = 1.0, left = 1.0, right = 1.0, prop = 'wall'):
 	toPosRight.y += front + my
 	toPosRight.x += right + my
 	
-	#return obj.rayCast(To Position, From Position, Distance (0=infinity), With Property, 1, 1)
 	return (obj.rayCast(toPosFront, pos, 0, prop, 1, 1)[0], obj.rayCast(toPosLeft, pos, 0, prop, 1, 1)[0], obj.rayCast(toPosRight, pos, 0, prop, 1, 1)[0])
 
-def Player():
+def Player(): #Main player function. Run by "Tank" object in Blender.
 	
 	cont = logic.getCurrentController()
 	obj = cont.owner
 	scene = logic.getCurrentScene()
-	
 	motion = cont.actuators['Motion']
-	
-	#Keyboard movement events
 	key = logic.keyboard.events
 	kbleft = key[events.AKEY]
 	kbright = key[events.DKEY]
 	kbup = key[events.WKEY]
 	kbdown = key[events.SKEY]
 	
-	#Init function. Runs once.
 	def Init():
 		if not 'init' in obj:
 			obj['init'] = 1
@@ -132,11 +124,11 @@ def Player():
 			obj['dir'] = 0.0
 			obj['trailTime'] = 0
 			
-	#Update function. Runs every logic frame when TRUE level triggering is active
 	def Update():
-		obj['trailTime'] += 1
-		#left/right motion
-		if kbleft > 0:
+		
+		obj['trailTime'] += 1 #Timer used for Tank's trail graphic
+		
+		if kbleft > 0: #left/right motion
 			obj['mx'] += -obj['accel']
 			if obj['trailTime'] > 2:
 				obj['trailTime'] = 0
@@ -149,8 +141,7 @@ def Player():
 		else:
 			obj['mx'] *= (1-obj['friction'])
 		
-		#up/down motion		
-		if kbup > 0:
+		if kbup > 0: #up/down motion
 			obj['my'] += obj['accel']
 			if obj['trailTime'] > 2:
 				obj['trailTime'] = 0
@@ -174,13 +165,13 @@ def Player():
 		motion.dLoc = [obj['mx'], obj['my'] ,0.0]
 		cont.activate(motion)
 		
-	def Animate():
+	def Animate(): #This function translates up/down/left/right inputs into smooth rotations.
 		ori = obj.orientation.to_euler()
 		obj['dir'] = math.atan2(-obj['mx'], obj['my'])
 		ori.z = obj['dir']
 		obj.orientation = ori
 	
-	def Death():
+	def Death(): #This function handles the Tank's death :(
 		if obj['hp'] < 1:
 			scene.addObject('Explosion',obj)
 			logic.sendMessage('explosion', 'None')
@@ -212,45 +203,18 @@ def Gun():
 			
 	def Update():
 		
-		obj.worldPosition = obj['parent'].worldPosition
+		obj.worldPosition = obj['parent'].worldPosition #Making sure the Tank's gun goes where it should.
 		
-		#obj['time'] += 1
-		
-		def MousePos():
+		def MousePos(): #This function handles the gun's rotation, making it follow the cursor's position.
 			x = int(render.getWindowWidth() / 2 - (logic.mouse.position[0] * render.getWindowWidth())) * obj['scale']
 			y = int(render.getWindowHeight() / 2 - (logic.mouse.position[1] * render.getWindowHeight())) * obj['scale']
 			return mathutils.Vector((-x, y, 0.6520))
 		
 		toVect = MousePos() - obj.worldPosition
-		#print (logic.mouse.position)
 		obj.alignAxisToVect(toVect, 1, 1)
 		obj.alignAxisToVect([0.0, 0.0, 1.0], 2, 1)
 		
-		"""if MousePos()[0] < (-int(render.getWindowWidth()/2 - 100)):
-			render.setMousePosition(110, int(render.getWindowHeight()/2) - int(MousePos()[1]))
-		elif MousePos()[0] > (int(render.getWindowWidth()/2 - 100)):
-			render.setMousePosition(render.getWindowWidth() - 110, int(render.getWindowHeight()/2) - int(MousePos()[1]))
-		if MousePos()[1] < (-int(render.getWindowHeight()/2 - 100)):
-			render.setMousePosition(int(render.getWindowWidth()/2) + int(MousePos()[0]), int(render.getWindowHeight() - 110))
-		elif MousePos()[1] > (int(render.getWindowHeight()/2 - 100)):
-			render.setMousePosition(int(render.getWindowWidth()/2) + int(MousePos()[0]), 110)"""
-		#logic.mouse.visible = True
-		
-		"""#####################OLD AIMING SYSTEM BELOW################"""
-		
-		"""def mousePos():
-			x = int(render.getWindowWidth() / 2 - (logic.mouse.position[0] * render.getWindowWidth())) * obj['scale']
-			return x
-		
-		if obj['time'] > 1:
-			pos = mousePos()
-			motion.useLocalDRot = False
-			motion.dRot = (0.0, 0.0, pos)
-			cont.activate(motion)
-"""
-		#render.setMousePosition(int(render.getWindowWidth() / 2), int(render.getWindowHeight() / 2))
-		
-	def Laser():
+	def Laser(): #Draws the aiming laser from the gun.
 		ray = obj.rayCast(aim, rInit, 500, '', 1, 0)[1]
 		hitPos = [ray[0], ray[1], ray[2]]
 		render.drawLine(rInit.worldPosition, hitPos, [1.0, 0.0, 0.0])
@@ -260,7 +224,7 @@ def Gun():
 	Update()
 	Laser()
 
-def RocketEffect():
+def RocketEffect(): #Simple function controlling the fire effect on the back of rockets.
 	
 	cont = logic.getCurrentController()
 	obj = cont.owner
@@ -285,7 +249,7 @@ def RocketEffect():
 	Init()
 	Update()
 	
-def RocketInit():
+def RocketInit(): #Function controlling instantiation of rockets. Run by the RocketInit object in Blender.
 	
 	cont = logic.getCurrentController()
 	obj = cont.owner
@@ -314,7 +278,7 @@ def RocketInit():
 	Init()
 	Update()
 	
-def Rocket():
+def Rocket(): #Function controlling general rocket behaviour, including bounce angle, and death. 
 	
 	cont = logic.getCurrentController()
 	obj = cont.owner
@@ -349,7 +313,7 @@ def Rocket():
 		obj.applyForce([0.0, 0.0, 9.82], 0)
 		cont.activate(motion)
 		
-	def BounceAngle():
+	def BounceAngle(): # A function used to determine the new angle of motion of a projectile after bouncing off a wall. 
 		if Bounce(obj['speed'], obj['front'], obj['side'], obj['side'], 'wall') != mathutils.Vector((0.0, 0.0, 0.0)):
 			cont.activate(cont.actuators['Bounce'])
 			if int(Bounce(obj['speed'], obj['front'], obj['side'], obj['side'], 'wall')[1]) == -1: #collision surface is on the X axis
@@ -417,7 +381,7 @@ def Rocket():
 		
 		obj['time'] += 1.0
 			
-	def Message():
+	def Message(): #This function alerts enemy tanks when a rocket is going to collide with them.
 		ori = obj.orientation[1].copy()
 		ori.x *= -1
 		pos = obj.position
@@ -429,18 +393,10 @@ def Rocket():
 		rayL = obj.rayCast(posL + Scalar(obj.orientation[1], mathutils.Vector((-1,1,1))), posL, 10000, '', 1, 0)
 		rayR = obj.rayCast(posR + Scalar(obj.orientation[1], mathutils.Vector((-1,1,1))), posR, 10000, '', 1, 0)
 		
-		'''print("ray: ", ray[0])
-		print("rayL: ", rayL[0])
-		print("rayR: ", rayR[0])
-		print('*************************************')'''
-		
 		if ray[1] != None or rayL[1] != None or rayR[1] != None:
 			hitPos = [ray[1][0], ray[1][1], ray[1][2]]
 			hitPosL = [rayL[1][0], rayL[1][1], rayL[1][2]]
 			hitPosR = [rayR[1][0], rayR[1][1], rayR[1][2]]
-		#render.drawLine(obj.position, hitPos, [0.0, 1.0, 0.0])
-		#render.drawLine(posL, hitPosL, [0.0, 1.0, 0.0])
-		#render.drawLine(posR, hitPosR, [0.0, 1.0, 0.0])
 		if ray != None or rayL != None or rayR != None:
 			if ray[0] != None:
 				if Dist(ray[1], scene.objects['EvadeL'].worldPosition) > Dist(ray[1], scene.objects['EvadeR'].worldPosition):

@@ -112,7 +112,7 @@ class Button(object):
 					i.restart()
 			scene.end()
 
-def CameraMain():
+def CameraMain(): #sets the cursor to visible while in the main menu.
 	
 	cont = logic.getCurrentController()
 	obj = cont.owner
@@ -130,7 +130,7 @@ def CameraMain():
 	Init()
 	Update()
 		
-def Camera():
+def Camera(): #Sets the cursor to visible while in the "Next level" and "GameOver" menus.
 	
 	cont = logic.getCurrentController()
 	obj = cont.owner
@@ -257,7 +257,7 @@ def Again():
 	Init()
 	Update()
 
-def Score():
+def Score(): #Keeps track of score, and instantiates it on screen during "Next Level" and "GameOver" menus.
 	
 	cont = logic.getCurrentController()
 	obj = cont.owner
@@ -303,17 +303,11 @@ def Score():
 			if dict['score'] == 0:
 				if 'digit4' in obj:
 					scene.addObject('Num_0', obj)
-					
-			"""if 'digit%s' % i in obj and dict['levelScore'] >= 10**(4-i):			####CODE FOR THE SCORE FROM A SINGLE LEVEL###
-				scene.addObject('Num_%s' % (score[len(levelScore)-(5-i)]),obj)
-			if dict['levelScore'] == 0:
-				if 'digit4' in obj:
-					scene.addObject('Num_0', obj)"""
 
 	Init()
 	Update()
 	
-def Paused():
+def Paused(): #Simple Pause function
 	
 	cont = logic.getCurrentController()
 	obj = cont.owner
@@ -343,7 +337,7 @@ def Paused():
 	Init()
 	Update()	
 	
-def ScoreCounter():
+def ScoreCounter(): #Adds individual level score to total score. This needed to be done so that during a GameOver, the level score could be shown, but not added to the total score.
 	
 	cont = logic.getCurrentController()
 	obj = cont.owner
