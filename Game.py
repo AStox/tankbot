@@ -20,7 +20,9 @@ import mathutils
 import time
 import random
 	
-def Game(): #The main Game function is run from the camera object and controls camera movement, level switching, countdowns, gameovers, etc...
+def Game(): 
+#The main Game function is run from the camera object and controls camera movement, 
+#level switching, countdowns, gameovers, etc...
 	
 	cont = logic.getCurrentController()
 	obj = cont.owner
@@ -50,51 +52,53 @@ def Game(): #The main Game function is run from the camera object and controls c
 			scene.suspend()
 			
 	def Update():
+		#Camera shake animation. Used during explosions.
 		if message1.positive:
-			obj.playAction("CamMainAction",1.0,11.0,1,1,0.0,1,0.0,0,1.0)
+			obj.playAction("CamMainAction",1.0,11.0,1,1,0.0,1,0.0,0,1.0) 
 		if obj.getActionFrame(1) > 10.5:
 			obj.stopAction(1)
 			obj.setActionFrame(0,1)
-			
+		
+		#Pause scene controller
 		if pause.positive and dict['paused'] == False:
 			dict['paused'] = True
 			logic.addScene('Pause')
 			scene.suspend()
 		
 		
-	def Next():
+	def Next(): #Handles beating a level, adding score, and moving on to the next level.
 		if obj['enemies'] < 1:
 			for i in scenes:
 					if 'Score' in i.name:
 						i.suspend()
-			if obj['time'] > 45: #delay between when the last tank is killed and the 'next' menu appears
+			if obj['time'] > 45: #delay between when the last tank is killed and the 'next' menu appears. Looks weird if its instant.
 				if dict['level'] == 0:
-					dict['score'] = 0
+					dict['score'] = 0 #No points awarded on instruction level (level 0).
 				else:
 					timeBonus = 50 - (int(dict['levelClock']))
-					if timeBonus >= 1:
+					if timeBonus >= 1: #Added this in to avoid adding negative bonuses if player take longer than 50 seconds to beat a level.
 						dict['levelScore'] += timeBonus
 				scene.suspend()
-				logic.addScene('Next')
+				logic.addScene('Next') #The next scene is added as an overlay to show current score and show the "next level" button.
 			obj['time'] += 1
 			
-	def Gameover():	
+	def Gameover():	#Handles losing. 
 		if obj['players'] < 1:
 			if obj['time'] > 45:	#delay between when the last tank is killed and the 'gameover' menu appears
 				scene.suspend()
 				logic.addScene('Gameover')
 			obj['time'] += 1
 	
-	def Camera():
+	def Camera(): #Handles camera motion. It smoothly follows the player.
 	
 		tarPos = obj['target'].worldPosition
 		pos = obj.worldPosition
-		soft = 0.05
+		soft = 0.05 #this is the amount of lag the camera has... so it's not rigidly attached to the player. Kinda like... flowy... dude.
 		obj.position.x += (tarPos.x - pos.x) * soft
 		obj.position.y += (tarPos.y + obj['depth'] - pos.y) * soft
 		logic.mouse.visible = False
 		
-	def Countdown():
+	def Countdown(): #Adds in the countdown scene you see at the start of every level. Then the CountdownAction function (below) takes over.
 		logic.addScene('Countdown',True)
 		dict['newLevel'] += 1
 		
@@ -108,10 +112,10 @@ def Game(): #The main Game function is run from the camera object and controls c
 		Next()
 	if not 'Next' in scenes:
 		Gameover()
-	if dict['newLevel'] == 0:
+	if dict['newLevel'] == 0: #only want this to run when a new level scene is added (AKA  dict['newLevel'] == 0)
 		Countdown()
 	
-def CountdownAction(): #A function to pause the game when countdown is happening and resume when it's over.
+def CountdownAction(): #Pauses the game when countdown is happening and resumes when it should be over.
 	
 	cont = logic.getCurrentController()
 	obj = cont.owner
@@ -131,15 +135,15 @@ def CountdownAction(): #A function to pause the game when countdown is happening
 		for i in scenes:
 			if 'Score' in i.name:
 				i.suspend()
-		if obj['time'] > 130.0:
+		if obj['time'] > 130.0: #Time it takes for the countdown animation to complete.
 			for i in scenes:
-				if 'Level%s' % level in i.name:
+				if 'Level%s' % level in i.name: #finds current level scene an resumes it
 					i.resume()
 			for i in scenes:
 				if 'Score' in i.name:
 					i.resume()
 			for i in scenes:
-				if 'Menu' in i.name:
+				if 'Menu' in i.name: #This makes sure the main menu scene was removed and isn't hiding behind everything else.
 					i.end()
 			scene.end()
 		obj['time'] += 1.0
