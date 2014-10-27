@@ -140,8 +140,26 @@ class EnemyTemp(object): #General enemy class
 			for i in range (0,361,30):
 				i *= (math.pi/180)	
 				
-				#Evading to the left
-				if self.type == 'regular' and messageL.positive and obj['evadeTimer']:
+		'''
+		The enemy AI works like this: All rockets have two invisible components anchored to them.
+		When a rocket is on a collision course with an enemy, it sends a message to that enemy alerting it and 
+		the two components immediately switch to being anchored to the left and right sides if the tank, but at
+		and angle perpendicular to the rocket. The tank then evades one of the two invisible components depending
+		on which side of the tank the rocket is going to hit. This effectively makes the tank evade perpendicularly from
+		rockets as soon as they enter a collision course. A problem arises when multiple player rockets are live at once,
+		but on the other hand this adds a viable strategy for confusing and killing the enemy tanks. 
+		
+		When not evading a rocket, a tank will navigate the level using Nav Meshes until line of sight can be established.
+		At this point the enemy tank will big to fire, as well as keep it's distance from obstacles and walls so that it 
+		has enough room to evade if it needs to.
+		
+		Kamikaze type enemies navigate and try to collide with the player's tank once line of sight has been established.
+		
+		Artillery type tanks don't move.
+		'''
+				
+				#Evading to the left	
+				if self.type == 'regular' and messageL.positive:
 					if 'Rocket' in scene.objects:
 						evadeR.worldPosition = obj.worldPosition + Scalar(scene.objects['Rocket'].orientation[0], mathutils.Vector((-1,1,1)))*3
 						evadeL.worldPosition = obj.worldPosition - Scalar(scene.objects['Rocket'].orientation[0], mathutils.Vector((-1,1,1)))*3
@@ -152,7 +170,7 @@ class EnemyTemp(object): #General enemy class
 						obj['evadeTimer'] = 0
 						
 				#Evading to the right
-				elif self.type == 'regular' and messageR.positive and obj['evadeTimer']:
+				elif self.type == 'regular' and messageR.positive:
 					if 'Rocket' in scene.objects:
 						evadeR.worldPosition = obj.worldPosition + Scalar(scene.objects['Rocket'].orientation[0], mathutils.Vector((-1,1,1)))*3
 						evadeL.worldPosition = obj.worldPosition - Scalar(scene.objects['Rocket'].orientation[0], mathutils.Vector((-1,1,1)))*3
@@ -241,7 +259,7 @@ class EnemyTemp(object): #General enemy class
 			if not 'mx' in obj['target']:
 				obj['target']['mx'] = 0.0
 				
-			ori = obj.orientation.to_euler()
+			ori = obj.orientation.to_euler() #this block of code is where the calculations for accurate aiming is done.
 			pos = obj.worldPosition
 			corVec = mathutils.Vector((-1.0, 1.0, 1.0))
 			tarSpeedVec = AbsVec(mathutils.Vector((obj['target']['mx'], obj['target']['my'], 0)))
@@ -275,8 +293,6 @@ class EnemyTemp(object): #General enemy class
 		
 		if self.type == 'regular':
 			obj.worldPosition.z = 1
-		elif self.type == 'miner':
-			obj.worldPosition.z = .45
 		
 		def Init():
 			if not 'init' in obj:
@@ -307,8 +323,7 @@ class EnemyTemp(object): #General enemy class
 
 				
 #The level functions control what enemies are present in each level and their behaviours.
-#For example, Level0, the "Controls" level at the start of the game has a regular enemy that does not attack.
-				
+#For example, Level0, the "Controls" level at the start of the game has a regular enemy that does not attack.		
 def Level0(): 
 
 	cont = logic.getCurrentController()
@@ -714,7 +729,7 @@ def Rocket(): #Function controlling general rocket behaviour and death.
 	Update()
 
 def ArtilleryRocket(): #This function controls rocket behaviour and death for Artillery rockets, as well as their trajectory and shadow.
-	
+									#most of the code in this function determines the parabola that the rocket travels on.
 	cont = logic.getCurrentController()
 	obj = cont.owner
 	scene = logic.getCurrentScene()
@@ -799,7 +814,10 @@ def ArtilleryRocket(): #This function controls rocket behaviour and death for Ar
 	Init()
 	Update()
 	
-def Mine(): #Mines were removed from the game, but I figured I would leave this in here as inspiration if I ever decide to bring them back.
+'''
+###Mines were removed from the game, but I figured I would leave this in here as inspiration if I ever decide to bring them back.
+
+def Mine(): 
 	
 	cont = logic.getCurrentController()
 	obj = cont.owner
@@ -838,19 +856,4 @@ def Mine(): #Mines were removed from the game, but I figured I would leave this 
 		obj['time'] += 1
 	Init()
 	Update()
-	
-def Template():
-	
-	cont = logic.getCurrentController()
-	obj = cont.owner
-	scene = logic.getCurrentScene()
-	
-	def Init():
-		if not 'init' in obj:
-			obj['init'] = 1
-	
-	def Update():
-		pass
-	
-	Init()
-	Update()
+	'''

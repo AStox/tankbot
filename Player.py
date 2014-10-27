@@ -21,13 +21,13 @@ import math
 import mathutils
 import time
 
-def Dist(vector1,vector2): #Distance function. Used below
+def Dist(vector1,vector2): #Distance function. Used below.
 	x = vector1[0] - vector2[0]
 	y = vector1[1] - vector2[1]
 	z = vector1[2] - vector2[2]
 	return math.sqrt(math.sqrt(x**2+y**2)+z**2)
 
-def Scalar(vector1, vector2): #Scalar Multiplication of vectors. Used below
+def Scalar(vector1, vector2): #Scalar Multiplication of vectors. Used below.
 	x = vector1[0] * vector2[0]
 	y = vector1[1] * vector2[1]
 	z = vector1[2] * vector2[2]
@@ -129,12 +129,12 @@ def Player(): #Main player function. Run by "Tank" object in Blender.
 		obj['trailTime'] += 1 #Timer used for Tank's trail graphic
 		
 		if kbleft > 0: #left/right motion
-			obj['mx'] += -obj['accel']
+			obj['mx'] += -obj['accel'] #Left
 			if obj['trailTime'] > 2:
 				obj['trailTime'] = 0
 				scene.addObject('Trail', obj, 1000)
 		elif kbright > 0:
-			obj['mx'] += obj['accel']
+			obj['mx'] += obj['accel']#Right
 			if obj['trailTime'] > 2:
 				obj['trailTime'] = 0
 				scene.addObject('Trail', obj, 1000)
@@ -142,19 +142,20 @@ def Player(): #Main player function. Run by "Tank" object in Blender.
 			obj['mx'] *= (1-obj['friction'])
 		
 		if kbup > 0: #up/down motion
-			obj['my'] += obj['accel']
+			obj['my'] += obj['accel']#Up
 			if obj['trailTime'] > 2:
 				obj['trailTime'] = 0
 				scene.addObject('Trail', obj, 1000)
 		elif kbdown > 0:
-			obj['my'] += -obj['accel']
+			obj['my'] += -obj['accel']#Down
 			if obj['trailTime'] > 2:
 				obj['trailTime'] = 0
 				scene.addObject('Trail', obj, 1000)
 		else:
-			obj['my'] *= (1-obj['friction'])
+			obj['my'] *= (1-obj['friction']) #Used to simulate a bit of momentum. Tank still stops pretty quickly, but it has
+														#a bit of a gradual slow down now.
 
-		if AxisCheck(obj['my'], 1.0, 1.0, 1.0, 'wall')[0] != None:
+		if AxisCheck(obj['my'], 1.0, 1.0, 1.0, 'wall')[0] != None: #double checking collisions.
 			obj['my'] = 0
 
 		#Max speed
@@ -165,7 +166,8 @@ def Player(): #Main player function. Run by "Tank" object in Blender.
 		motion.dLoc = [obj['mx'], obj['my'] ,0.0]
 		cont.activate(motion)
 		
-	def Animate(): #This function translates up/down/left/right inputs into smooth rotations.
+	def Animate(): #This function translates up/down/left/right inputs into smooth rotations. So, for example, if
+							# the user holds the up and left arrow keys, the tank will move diagonally to the top left.
 		ori = obj.orientation.to_euler()
 		obj['dir'] = math.atan2(-obj['mx'], obj['my'])
 		ori.z = obj['dir']
@@ -205,12 +207,12 @@ def Gun():
 		
 		obj.worldPosition = obj['parent'].worldPosition #Making sure the Tank's gun goes where it should.
 		
-		def MousePos(): #This function handles the gun's rotation, making it follow the cursor's position.
+		def MousePos(): #This function keeps track of the cursor's position on the screen.
 			x = int(render.getWindowWidth() / 2 - (logic.mouse.position[0] * render.getWindowWidth())) * obj['scale']
 			y = int(render.getWindowHeight() / 2 - (logic.mouse.position[1] * render.getWindowHeight())) * obj['scale']
 			return mathutils.Vector((-x, y, 0.6520))
 		
-		toVect = MousePos() - obj.worldPosition
+		toVect = MousePos() - obj.worldPosition #This line rotates the gun to point at the cursor's position.
 		obj.alignAxisToVect(toVect, 1, 1)
 		obj.alignAxisToVect([0.0, 0.0, 1.0], 2, 1)
 		
@@ -224,7 +226,7 @@ def Gun():
 	Update()
 	Laser()
 
-def RocketEffect(): #Simple function controlling the fire effect on the back of rockets.
+def RocketEffect(): #Controls the fire effect on the back of rockets.
 	
 	cont = logic.getCurrentController()
 	obj = cont.owner
@@ -262,12 +264,12 @@ def RocketInit(): #Function controlling instantiation of rockets. Run by the Roc
 		if not 'init' in obj:
 			obj['init'] = 1
 			obj['atk'] = 10
-			obj['shottimer'] = 50.0
+			obj['shottimer'] = 50.0 #Shot cooldown
 			obj['dir'] = 0.0
 			
 	def Update():
 	
-		obj['shottimer'] += 1.0
+		obj['shottimer'] += 1.0 
 		if msshoot:
 			if obj['shottimer'] >= 60.0:
 				obj['shottimer'] = 0.0
@@ -353,20 +355,20 @@ def Rocket(): #Function controlling general rocket behaviour, including bounce a
 				obj['bounces'] += 1
 				
 	def Death():
-		if obj['bounces'] > obj['maxBounces']:
+		if obj['bounces'] > obj['maxBounces']: #Makes sure rockets only bounce once.
 			obj.endObject()
 			explosion = scene.addObject('Explosion',obj)
 			logic.sendMessage('rocket_explosion', 'None')
 		
-		if rocket_collision.positive and obj['time'] < 30:
-			dict['levelScore'] += 10
+		if rocket_collision.positive and obj['time'] < 30: #Adds ten points to your score if you kill a rocket within a certain
+			dict['levelScore'] += 10								  #radius around your tank. 
 			dict['rocket_kills'] += 1
 			scene.addObject('Plus_10',obj,40)
 			scene.objects['Plus_10'].alignAxisToVect([1.0,0,0],0,1.0)
 		if collision.positive:
 			enemy = collision.hitObject
-			if 'player' in enemy and obj['time'] < 5.0:
-				pass
+			if 'player' in enemy and obj['time'] < 5.0: #Have to have this otherwise your own rockets sometimes kill you 
+				pass												  #right when they spawn.
 			else:
 				if 'enemy' in enemy:
 					logic.sendMessage('hit', 'None', str(enemy))
@@ -419,19 +421,3 @@ def Rocket(): #Function controlling general rocket behaviour, including bounce a
 	Message()
 	BounceAngle()
 	Death()	
-	
-def Template():
-	
-	cont = logic.getCurrentController()
-	obj = cont.owner
-	scene = logic.getCurrentScene()
-	
-	def Init():
-		if not 'init' in obj:
-			obj['init'] = 1
-	
-	def Update():
-		pass
-	
-	Init()
-	Update()
