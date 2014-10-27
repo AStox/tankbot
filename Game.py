@@ -392,7 +392,7 @@ def Explosion(): #This function controls the explosion animation and makes sure 
 	cont = logic.getCurrentController()
 	obj = cont.owner
 	scene = logic.getCurrentScene()
-	tank_explosion = cont.sensors['Message1']
+	tank_explosion = cont.sensors['Message1'] #Receives messages from rockets and tanks when they are destroyed.
 	rocket_explosion = cont.sensors['Message2']
 	
 	def Init():
@@ -401,7 +401,7 @@ def Explosion(): #This function controls the explosion animation and makes sure 
 			obj['time'] = 0.0
 	
 	def Update():
-		if obj['time'] > 37.0:
+		if obj['time'] > 37.0: #Length of the explosion animation
 			obj.endObject()
 		obj['time'] += 1.0
 		if tank_explosion.positive:
@@ -428,7 +428,7 @@ def Grid(): #kills any tank that touches the "water".
 		if collision.positive:
 				enemy = collision.hitObject
 				if 'hp' in enemy:
-					enemy['hp'] -= 1000
+					enemy['hp'] -= 1000 #Tanks only have 1 hp. This reeeaallly kills them.
 				logic.sendMessage('hit', 'None', str(enemy))
 	
 	Init()
@@ -453,7 +453,9 @@ def Timer(): #Instantiates the timer in the corner of the screen.
 		if dict['paused'] == True:
 			scene.suspend()
 		
-		for i in range(1,4):
+		#The timer doesn't use the built in text system. Instead I modelled my own pixelated font and use this for loop
+		#to determine which model to pull in for each digit.
+		for i in range(1,4): 
 			if 'Digit%s' % i in obj and dict['levelClock'] >= 10**(3-i):
 				scene.addObject('Num_%s' % (str(int(dict['levelClock']))[len(str(int(dict['levelClock'])))-(4-i)]),obj,1)
 			if int(dict['levelClock']) == 0:
@@ -463,7 +465,7 @@ def Timer(): #Instantiates the timer in the corner of the screen.
 	Init()
 	Update()
 	
-def Level(): #Instantiates the level number in the other corner of the screen.
+def Level(): #Instantiates the level number in the other corner of the screen. Uses the same home-made, 3D font as the timer.
 	
 	cont = logic.getCurrentController()
 	obj = cont.owner
@@ -479,7 +481,7 @@ def Level(): #Instantiates the level number in the other corner of the screen.
 	Init()
 	Update()
 
-def Breakable(): #Controls breakable blocks
+def Breakable(): #Attached this function to breakable blocks to make them destroyable.
 	
 	cont = logic.getCurrentController()
 	obj = cont.owner
@@ -495,22 +497,6 @@ def Breakable(): #Controls breakable blocks
 	def Update():
 		if obj['hp'] <= 0:
 			obj.endObject()
-	
-	Init()
-	Update()
-	
-def Template():
-	
-	cont = logic.getCurrentController()
-	obj = cont.owner
-	scene = logic.getCurrentScene()
-	
-	def Init():
-		if not 'init' in obj:
-			obj['init'] = 1
-	
-	def Update():
-		pass
 	
 	Init()
 	Update()
